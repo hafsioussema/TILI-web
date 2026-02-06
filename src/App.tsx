@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import type { ReactNode } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { LoginPage } from '@/features/auth/LoginPage';
+import { Toaster } from 'sonner';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { UsersPage } from '@/pages/UsersPage';
 import { useAuthStore } from '@/features/auth/useAuthStore';
@@ -17,7 +18,7 @@ const ProtectedRoute = ({ children }: { children: ReactNode }) => {
 
 import { Dashboard } from '@/features/dashboard/Dashboard';
 import { ProjectList } from '@/features/projects/ProjectList';
-import { DocumentList } from '@/features/documents/DocumentList';
+import { DocumentsPage } from '@/features/documents/DocumentsPage';
 import { MeetingTimeline } from '@/features/meetings/MeetingTimeline';
 
 function App() {
@@ -37,6 +38,7 @@ function App() {
 
   return (
     <BrowserRouter>
+      <Toaster position="top-right" expand={false} richColors closeButton />
       <Routes>
         <Route path="/login" element={<LoginPage />} />
 
@@ -49,7 +51,7 @@ function App() {
 
           <Route index element={<Dashboard />} />
           <Route path="projects" element={<ProjectList />} />
-          <Route path="documents" element={<DocumentList />} />
+          <Route path="documents" element={<DocumentsPage />} />
           <Route path="meetings" element={<MeetingTimeline />} />
           <Route path="users" element={<UsersPage />} />
         </Route>
