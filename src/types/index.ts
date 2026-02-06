@@ -4,25 +4,61 @@ export enum UserRole {
     CONSULTANT = 'CONSULTANT',
 }
 
-export enum UserStatus {
-    ACTIVE = 'ACTIVE',
-    INACTIVE = 'INACTIVE',
-}
-
 export interface User {
     id: string;
     nom: string;
     prenom: string;
     email: string;
     role: UserRole;
-    statut: UserStatus;
+    isActive: boolean;
+    mustChangePassword: boolean;
     telephone?: string;
     poste?: string;
-    derniere_connexion?: string;
-    photo?: string;
+    lastLogin?: string | Date; // Date string from backend
+    avatar?: string;
+    createdAt?: string | Date;
+    updatedAt?: string | Date;
 }
 
 export interface AuthResponse {
-    access_token: string;
-    user: User;
+    accessToken: string;
+    refreshToken: string;
+    user: Partial<User>; // Login returns partial user
+}
+
+export interface LoginDto {
+    email: string;
+    password: string;
+}
+
+export interface ChangePasswordDto {
+    currentPassword?: string;
+    newPassword?: string;
+}
+
+export interface UpdateProfileDto {
+    nom?: string;
+    prenom?: string;
+    telephone?: string;
+    poste?: string;
+    avatar?: string;
+}
+
+export interface CreateUserDto {
+    nom: string;
+    prenom: string;
+    email: string;
+    role: UserRole;
+    telephone?: string;
+    poste?: string;
+}
+
+export interface UpdateUserDto {
+    nom?: string;
+    prenom?: string;
+    email?: string;
+    role?: UserRole;
+    isActive?: boolean;
+    telephone?: string;
+    poste?: string;
 }

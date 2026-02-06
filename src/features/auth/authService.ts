@@ -1,26 +1,29 @@
-
-import type { AuthResponse } from '@/types';
+import { apiClient } from '@/lib/axios';
+import type { AuthResponse, LoginDto, User, ChangePasswordDto, UpdateProfileDto } from '@/types';
 
 export const authService = {
-    login: async (email: string, _password: string): Promise<AuthResponse> => {
-        // MOCK FOR DEMO PURPOSES
-        console.log(`Attempting login with ${email}`);
+    login: async (data: LoginDto): Promise<AuthResponse> => {
+        const response = await apiClient.post<AuthResponse>('/auth/login', data);
+        return response.data;
+    },
 
-        // Simulate API delay
-        await new Promise(resolve => setTimeout(resolve, 800));
+    getProfile: async (): Promise<User> => {
+        const response = await apiClient.get<User>('/auth/profile');
+        return response.data;
+    },
 
-        // Return mock success always for testing
-        return {
-            access_token: "mock-jwt-token-xyz-123",
-            user: {
-                id: "1",
-                nom: "Admin",
-                prenom: "Super",
-                email: email,
-                role: "ADMIN" as any, // Cast to avoid circular dep issues in mock
-                statut: "ACTIVE" as any,
-                photo: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
-            }
-        };
+    refreshToken: async (): Promise<{ accessToken: string }> => {
+        const response = await apiClient.post<{ accessToken: string }>('/auth/refresh');
+        return response.data;
+    },
+
+    updateProfile: async (data: UpdateProfileDto): Promise<User> => {
+        const response = await apiClient.patch<User>('/auth/profile', data);
+        return response.data;
+    },
+
+    changePassword: async (data: ChangePasswordDto): Promise<{ message: string }> => {
+        const response = await apiClient.post<{ message: string }>('/auth/change-password', data);
+        return response.data;
     },
 };

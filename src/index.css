@@ -2,69 +2,95 @@
 
 @layer base {
   :root {
-    /* Light Mode - Linear Style */
+    /* Light Mode - Premium SaaS */
+    /* Background: Very clean white/off-white */
     --background: 0 0% 100%;
+    /* Foreground: Deep, rich gray, almost black */
     --foreground: 240 10% 3.9%;
-    --card: 0 0% 100%;
+
+    /* Card: Subtle shift from background */
+    --card: 0 0% 99%;
     --card-foreground: 240 10% 3.9%;
+
+    /* Popover: Pure white with strong shadow */
     --popover: 0 0% 100%;
     --popover-foreground: 240 10% 3.9%;
-    --primary: 221.2 83.2% 53.3%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 240 4.8% 95.9%;
+
+    /* Primary: Electric Indigo/Violet - Vivid and modern */
+    --primary: 250 85% 60%; /* #5b4bf6 */
+    --primary-foreground: 0 0% 100%;
+
+    /* Secondary: Subtle cool gray for secondary actions */
+    --secondary: 240 5% 96%;
     --secondary-foreground: 240 5.9% 10%;
-    --muted: 240 4.8% 95.9%;
-    --muted-foreground: 240 3.8% 46.1%;
-    --accent: 240 4.8% 95.9%;
+
+    /* Muted: For dividers and disabled states */
+    --muted: 240 5% 96%;
+    --muted-foreground: 240 4% 46%;
+
+    /* Accent: Used for hover states, very light indigo tint */
+    --accent: 250 20% 97%;
     --accent-foreground: 240 5.9% 10%;
+
+    /* Destructive: Refined red */
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
-    --border: 240 5.9% 90%;
-    --input: 240 5.9% 90%;
-    --ring: 240 10% 3.9%;
+
+    /* Border: Very subtle, almost invisible */
+    --border: 240 6% 90%;
+    --input: 240 6% 90%;
+    
+    /* Ring: Focus ring color matching primary */
+    --ring: 250 85% 60%;
+    
     --radius: 0.75rem;
 
-    --sidebar-bg: 0 0% 98%;
-    --sidebar-border: 240 5.9% 90%;
+    --sidebar-bg: 240 5% 99%;
+    --sidebar-border: 240 6% 92%;
   }
 
   .dark {
-    /* Dark Mode - Moonlight/Silver (Dim Mode) */
-    --background: 220 15% 22%;
-    /* #303440 - Very light 'dim' background */
+    /* Dark Mode - Deep Space / Midnight */
+    /* Background: Not pitch black, but very deep blue-gray (Linear/Vercel style) */
+    --background: 224 20% 8%; /* #0f111a */
     --foreground: 210 20% 98%;
 
-    --card: 220 15% 26%;
-    /* #393d4a - Clear surfaces */
+    /* Card: Slightly lighter than bg */
+    --card: 224 20% 10%;
     --card-foreground: 210 20% 98%;
 
-    --popover: 220 15% 26%;
+    /* Popover: Elevated surface */
+    --popover: 224 20% 10%;
     --popover-foreground: 210 20% 98%;
 
-    --primary: 217 91% 65%;
-    --primary-foreground: 222 47% 11%;
+    /* Primary: Slightly lighter/brighter for dark mode visibility */
+    --primary: 250 90% 65%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 220 15% 30%;
-    /* #414654 - Lighter inputs */
+    /* Secondary: Darker gray/blue surface */
+    --secondary: 224 15% 14%;
     --secondary-foreground: 210 20% 98%;
 
-    --muted: 220 15% 30%;
-    --muted-foreground: 215 16% 80%;
+    /* Muted: Subtle separators */
+    --muted: 224 15% 14%;
+    --muted-foreground: 215 16% 70%;
 
-    --accent: 220 15% 30%;
+    /* Accent: Hover state on dark surfaces */
+    --accent: 224 15% 16%;
     --accent-foreground: 210 20% 98%;
 
-    --destructive: 0 62.8% 40%;
+    /* Destructive */
+    --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 20% 98%;
 
-    --border: 220 15% 32%;
-    /* Visible borders */
-    --input: 220 15% 32%;
-    --ring: 224 76% 55%;
+    /* Borders: Subtle boundaries */
+    --border: 224 15% 16%;
+    --input: 224 15% 16%;
+    
+    --ring: 250 90% 65%;
 
-    --sidebar-bg: 220 15% 20%;
-    /* #2b2f3a */
-    --sidebar-border: 220 15% 28%;
+    --sidebar-bg: 224 20% 7%;
+    --sidebar-border: 224 15% 12%;
   }
 }
 
@@ -96,31 +122,67 @@
   --color-border: hsl(var(--border));
   --color-input: hsl(var(--input));
   --color-ring: hsl(var(--ring));
+  
+  --radius-lg: var(--radius);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 4px);
+  
+  --animate-fade-in: fade-in 0.3s ease-out;
+  --animate-slide-up: slide-up 0.4s ease-out;
+  
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  
+  @keyframes slide-up {
+    from { transform: translateY(10px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
 }
 
 @layer base {
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased selection:bg-primary/20 selection:text-primary;
     font-family: 'Inter', system-ui, sans-serif;
-    -webkit-font-smoothing: antialiased;
+    /* Smooth transitions for theme switching */
     transition: background-color 0.4s ease, color 0.4s ease, border-color 0.4s ease;
   }
 
-  * {
-    @apply border-border;
+  /* Improve scrollbar aesthetics */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-muted-foreground/20 rounded-full hover:bg-muted-foreground/40 transition-colors;
   }
 }
 
 @layer utilities {
+  /* Glassmorphism Utilities */
   .glass {
-    @apply bg-white/70 dark:bg-background/80 backdrop-blur-xl border border-black/5 dark:border-white/5 shadow-2xl;
+    @apply bg-white/70 dark:bg-[#0f111a]/70 backdrop-blur-xl border border-white/20 dark:border-white/5;
   }
-
+  
   .glass-card {
-    @apply bg-white dark:bg-card border border-black/5 dark:border-white/5 shadow-sm hover:shadow-md transition-all duration-300;
+    @apply bg-card/80 dark:bg-card/40 backdrop-blur-md border border-border shadow-sm hover:shadow-md hover:border-primary/20 transition-all duration-300;
   }
-
+  
+  /* Text Gradients */
   .text-gradient {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-gray-900 via-gray-700 to-gray-500 dark:from-white dark:via-white dark:to-gray-400;
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/60;
+  }
+  
+  .text-gradient-primary {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-primary to-purple-500;
+  }
+  
+  /* Layout Helper */
+  .layout-padding {
+    @apply px-4 sm:px-6 lg:px-8;
   }
 }

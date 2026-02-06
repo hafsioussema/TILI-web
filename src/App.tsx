@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import type { ReactNode } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { LoginPage } from '@/features/auth/LoginPage';
@@ -14,15 +15,26 @@ const ProtectedRoute = ({ children }: { children: ReactNode }) => {
   return children;
 };
 
-// Simple Dashboard for now
-const Dashboard = () => (
-  <div className="p-6">
-    <h1 className="text-2xl font-bold mb-4">Bienvenue sur Tili Back-Office</h1>
-    <p className="text-gray-600">Sélectionnez une option dans le menu pour commencer.</p>
-  </div>
-);
+import { Dashboard } from '@/features/dashboard/Dashboard';
+import { ProjectList } from '@/features/projects/ProjectList';
+import { DocumentList } from '@/features/documents/DocumentList';
+import { MeetingTimeline } from '@/features/meetings/MeetingTimeline';
 
 function App() {
+  const checkAuth = useAuthStore((state) => state.checkAuth);
+
+  useEffect(() => {
+    checkAuth();
+
+    // Listen for unauthorized events from axios interceptor
+    const handleUnauthorized = () => {
+      checkAuth(); // This will clear the state
+    };
+
+    window.addEventListener('auth:unauthorized', handleUnauthorized);
+    return () => window.removeEventListener('auth:unauthorized', handleUnauthorized);
+  }, [checkAuth]);
+
   return (
     <BrowserRouter>
       <Routes>
@@ -33,7 +45,12 @@ function App() {
             <AppLayout />
           </ProtectedRoute>
         }>
+
+
           <Route index element={<Dashboard />} />
+          <Route path="projects" element={<ProjectList />} />
+          <Route path="documents" element={<DocumentList />} />
+          <Route path="meetings" element={<MeetingTimeline />} />
           <Route path="users" element={<UsersPage />} />
         </Route>
 

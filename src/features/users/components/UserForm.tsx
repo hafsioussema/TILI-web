@@ -1,11 +1,20 @@
 import { useState, useEffect } from 'react';
-import { userService } from '../services/userService';
-import type { CreateUserPayload } from '../services/userService';
+import { userService } from '@/features/users/userService'; // Updated import path
 import { UserRole } from '@/types';
 import type { User } from '@/types';
 import { Loader2, X, Mail, Phone, Briefcase, Shield } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
+
+// Define Interface locally or import if available
+interface CreateUserPayload {
+    nom: string;
+    prenom: string;
+    email: string;
+    role: UserRole;
+    telephone?: string;
+    poste?: string;
+}
 
 interface UserFormProps {
     user?: User;
@@ -16,7 +25,7 @@ interface UserFormProps {
 export const UserForm = ({ user, onSuccess, onCancel }: UserFormProps) => {
     const isEdit = !!user;
     const [loading, setLoading] = useState(false);
-    const [formData, setFormData] = useState<Partial<CreateUserPayload>>({
+    const [formData, setFormData] = useState<CreateUserPayload>({
         nom: '',
         prenom: '',
         email: '',
@@ -24,6 +33,8 @@ export const UserForm = ({ user, onSuccess, onCancel }: UserFormProps) => {
         telephone: '',
         poste: '',
     });
+
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         if (user) {
@@ -40,22 +51,27 @@ export const UserForm = ({ user, onSuccess, onCancel }: UserFormProps) => {
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
+        setError(null); // Clear error on change
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
+        setError(null);
         try {
-            await new Promise(resolve => setTimeout(resolve, 800));
-
             if (isEdit && user) {
                 await userService.update(user.id, formData);
             } else {
-                await userService.create(formData as CreateUserPayload);
+                await userService.create(formData);
             }
             onSuccess();
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error saving user', error);
+            if (error.response?.status === 409) {
+                setError('This email address is already in use by another member.');
+            } else {
+                setError('An error occurred. Please try again.');
+            }
         } finally {
             setLoading(false);
         }
@@ -83,6 +99,16 @@ export const UserForm = ({ user, onSuccess, onCancel }: UserFormProps) => {
             {/* Form Content */}
             <div className="flex-1 overflow-y-auto px-6 py-6">
                 <form id="user-form" onSubmit={handleSubmit} className="space-y-6">
+                    {error && (
+                        <motion.div
+                            initial={{ opacity: 0, y: -10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm flex items-center gap-2"
+                        >
+                            <Shield className="h-4 w-4 shrink-0" />
+                            <span>{error}</span>
+                        </motion.div>
+                    )}
                     <div className="flex gap-4">
                         <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-secondary to-muted border border-border flex items-center justify-center text-xl font-bold text-foreground shrink-0">
                             {formData.prenom?.[0] || 'T'}

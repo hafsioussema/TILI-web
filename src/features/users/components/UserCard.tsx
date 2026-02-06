@@ -1,5 +1,6 @@
+import { useState } from 'react';
 import type { User } from '@/types';
-import { UserRole, UserStatus } from '@/types';
+import { UserRole } from '@/types';
 import { Edit2, Trash2, Shield, MoreHorizontal, Mail, Phone } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -10,10 +11,12 @@ interface UserCardProps {
     onEdit: (user: User) => void;
     onDelete: (id: string) => void;
     onToggleStatus: (user: User) => void;
+    isCurrentUser?: boolean;
 }
 
-export const UserCard = ({ user, onEdit, onDelete, onToggleStatus }: UserCardProps) => {
-    const isActive = user.statut === UserStatus.ACTIVE;
+export const UserCard = ({ user, onEdit, onDelete, onToggleStatus, isCurrentUser }: UserCardProps) => {
+    const isActive = user.isActive;
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
 
     return (
         <motion.div
@@ -23,42 +26,49 @@ export const UserCard = ({ user, onEdit, onDelete, onToggleStatus }: UserCardPro
             exit={{ opacity: 0, scale: 0.95 }}
             className="group relative bg-card border border-border hover:border-ring/50 rounded-xl p-5 hover:bg-secondary/20 transition-all duration-300 shadow-sm hover:shadow-md"
         >
-            <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                <DropdownMenu.Root>
-                    <DropdownMenu.Trigger asChild>
-                        <button className="p-1 rounded bg-secondary/80 hover:bg-secondary text-muted-foreground hover:text-foreground transition outline-none">
-                            <MoreHorizontal size={16} />
-                        </button>
-                    </DropdownMenu.Trigger>
-                    <DropdownMenu.Content className="min-w-[140px] bg-popover rounded-lg shadow-xl p-1 border border-border z-50 animate-in fade-in zoom-in-95 duration-200">
-                        <DropdownMenu.Item
-                            onClick={() => onEdit(user)}
-                            className="flex items-center px-2 py-1.5 text-xs text-popover-foreground rounded hover:bg-muted cursor-pointer outline-none transition-colors"
-                        >
-                            <Edit2 size={12} className="mr-2" /> Edit Details
-                        </DropdownMenu.Item>
-                        <DropdownMenu.Item
-                            onClick={() => onToggleStatus(user)}
-                            className="flex items-center px-2 py-1.5 text-xs text-popover-foreground rounded hover:bg-muted cursor-pointer outline-none transition-colors"
-                        >
-                            <Shield size={12} className="mr-2" /> {isActive ? 'Deactivate' : 'Activate'}
-                        </DropdownMenu.Item>
-                        <DropdownMenu.Separator className="h-px bg-border my-1" />
-                        <DropdownMenu.Item
-                            onClick={() => onDelete(user.id)}
-                            className="flex items-center px-2 py-1.5 text-xs text-destructive rounded hover:bg-destructive/10 cursor-pointer outline-none transition-colors"
-                        >
-                            <Trash2 size={12} className="mr-2" /> Delete
-                        </DropdownMenu.Item>
-                    </DropdownMenu.Content>
-                </DropdownMenu.Root>
-            </div>
+            {!isCurrentUser && (
+                <div className={cn(
+                    "absolute top-4 right-4 transition-opacity duration-200",
+                    isMenuOpen ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                )}>
+                    <DropdownMenu.Root open={isMenuOpen} onOpenChange={setIsMenuOpen}>
+                        <DropdownMenu.Trigger asChild>
+                            <button className="p-1 rounded bg-secondary/80 hover:bg-secondary text-muted-foreground hover:text-foreground transition outline-none">
+                                <MoreHorizontal size={16} />
+                            </button>
+                        </DropdownMenu.Trigger>
+                        <DropdownMenu.Portal>
+                            <DropdownMenu.Content className="min-w-[140px] bg-popover rounded-lg shadow-xl p-1 border border-border z-50 animate-in fade-in zoom-in-95 duration-200">
+                                <DropdownMenu.Item
+                                    onClick={() => onEdit(user)}
+                                    className="flex items-center px-2 py-1.5 text-xs text-popover-foreground rounded hover:bg-muted cursor-pointer outline-none transition-colors"
+                                >
+                                    <Edit2 size={12} className="mr-2" /> Edit Details
+                                </DropdownMenu.Item>
+                                <DropdownMenu.Item
+                                    onClick={() => onToggleStatus(user)}
+                                    className="flex items-center px-2 py-1.5 text-xs text-popover-foreground rounded hover:bg-muted cursor-pointer outline-none transition-colors"
+                                >
+                                    <Shield size={12} className="mr-2" /> {isActive ? 'Deactivate' : 'Activate'}
+                                </DropdownMenu.Item>
+                                <DropdownMenu.Separator className="h-px bg-border my-1" />
+                                <DropdownMenu.Item
+                                    onClick={() => onDelete(user.id)}
+                                    className="flex items-center px-2 py-1.5 text-xs text-destructive rounded hover:bg-destructive/10 cursor-pointer outline-none transition-colors"
+                                >
+                                    <Trash2 size={12} className="mr-2" /> Delete
+                                </DropdownMenu.Item>
+                            </DropdownMenu.Content>
+                        </DropdownMenu.Portal>
+                    </DropdownMenu.Root>
+                </div>
+            )}
 
             <div className="flex items-start gap-4">
                 <div className="relative shrink-0">
                     <div className="h-12 w-12 rounded-full bg-gradient-to-b from-secondary to-muted border border-border flex items-center justify-center text-sm font-bold text-foreground shadow-inner">
-                        {user.photo ? (
-                            <img src={user.photo} alt={user.nom} className="h-full w-full rounded-full object-cover" />
+                        {user.avatar ? (
+                            <img src={user.avatar} alt={user.nom} className="h-full w-full rounded-full object-cover" />
                         ) : (
                             <span>{user.prenom[0]}{user.nom[0]}</span>
                         )}

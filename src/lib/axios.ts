@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 export const apiClient = axios.create({
     baseURL: API_URL,
@@ -25,8 +25,8 @@ apiClient.interceptors.response.use(
     (error) => {
         if (error.response?.status === 401) {
             localStorage.removeItem('token');
-            // Ideally redirect to login, but we handle this in UI or Router
-            window.location.href = '/login';
+            // Dispatch a custom event so the App can handle logout gracefully without reloading
+            window.dispatchEvent(new Event('auth:unauthorized'));
         }
         return Promise.reject(error);
     }

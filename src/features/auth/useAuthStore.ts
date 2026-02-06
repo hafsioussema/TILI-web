@@ -8,13 +8,14 @@ interface AuthState {
     setAuth: (user: User, token: string) => void;
     login: (email: string, pass: string) => Promise<void>;
     logout: () => void;
+    checkAuth: () => Promise<void>;
     isLoading: boolean;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
     user: null,
     token: localStorage.getItem('token'),
-    isLoading: false,
+    isLoading: true, // Start loading to check auth
 
     setAuth: (user, token) => {
         localStorage.setItem('token', token);
@@ -22,13 +23,38 @@ export const useAuthStore = create<AuthState>((set) => ({
     },
 
     login: async (email, password) => {
-        const response = await authService.login(email, password);
-        localStorage.setItem('token', response.access_token);
-        set({ user: response.user, token: response.access_token });
+        set({ isLoading: true });
+        try {
+            const response = await authService.login({ email, password });
+            localStorage.setItem('token', response.accessToken);
+            // Fetch full profile after login to get all fields
+            const user = await authService.getProfile();
+            set({ user: user, token: response.accessToken, isLoading: false });
+        } catch (error) {
+            set({ isLoading: false });
+            throw error;
+        }
     },
 
     logout: () => {
         localStorage.removeItem('token');
         set({ user: null, token: null });
+    },
+
+    checkAuth: async () => {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            set({ isLoading: false });
+            return;
+        }
+
+        try {
+            const user = await authService.getProfile();
+            set({ user, isLoading: false });
+        } catch (error) {
+            console.error('Auth check failed', error);
+            localStorage.removeItem('token');
+            set({ user: null, token: null, isLoading: false });
+        }
     },
 }));
