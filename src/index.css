@@ -1,0 +1,126 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    /* Light Mode - Linear Style */
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
+    --primary: 221.2 83.2% 53.3%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 240 4.8% 95.9%;
+    --secondary-foreground: 240 5.9% 10%;
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+    --accent: 240 4.8% 95.9%;
+    --accent-foreground: 240 5.9% 10%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 240 10% 3.9%;
+    --radius: 0.75rem;
+
+    --sidebar-bg: 0 0% 98%;
+    --sidebar-border: 240 5.9% 90%;
+  }
+
+  .dark {
+    /* Dark Mode - Moonlight/Silver (Dim Mode) */
+    --background: 220 15% 22%;
+    /* #303440 - Very light 'dim' background */
+    --foreground: 210 20% 98%;
+
+    --card: 220 15% 26%;
+    /* #393d4a - Clear surfaces */
+    --card-foreground: 210 20% 98%;
+
+    --popover: 220 15% 26%;
+    --popover-foreground: 210 20% 98%;
+
+    --primary: 217 91% 65%;
+    --primary-foreground: 222 47% 11%;
+
+    --secondary: 220 15% 30%;
+    /* #414654 - Lighter inputs */
+    --secondary-foreground: 210 20% 98%;
+
+    --muted: 220 15% 30%;
+    --muted-foreground: 215 16% 80%;
+
+    --accent: 220 15% 30%;
+    --accent-foreground: 210 20% 98%;
+
+    --destructive: 0 62.8% 40%;
+    --destructive-foreground: 210 20% 98%;
+
+    --border: 220 15% 32%;
+    /* Visible borders */
+    --input: 220 15% 32%;
+    --ring: 224 76% 55%;
+
+    --sidebar-bg: 220 15% 20%;
+    /* #2b2f3a */
+    --sidebar-border: 220 15% 28%;
+  }
+}
+
+@theme {
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+}
+
+@layer base {
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Inter', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    transition: background-color 0.4s ease, color 0.4s ease, border-color 0.4s ease;
+  }
+
+  * {
+    @apply border-border;
+  }
+}
+
+@layer utilities {
+  .glass {
+    @apply bg-white/70 dark:bg-background/80 backdrop-blur-xl border border-black/5 dark:border-white/5 shadow-2xl;
+  }
+
+  .glass-card {
+    @apply bg-white dark:bg-card border border-black/5 dark:border-white/5 shadow-sm hover:shadow-md transition-all duration-300;
+  }
+
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-gray-900 via-gray-700 to-gray-500 dark:from-white dark:via-white dark:to-gray-400;
+  }
+}
