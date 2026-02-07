@@ -1,8 +1,9 @@
 import { Outlet, useLocation } from 'react-router-dom';
-import { Bell, Search } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { PageTransition } from '@/components/ui/PageTransition';
 import { ThemeToggle } from '@/features/theme/ThemeToggle';
 import { AnimatedSidebar } from './AnimatedSidebar';
+import { NotificationPopOver } from '@/features/notifications/components/NotificationPopOver';
 
 export const AppLayout = () => {
     const location = useLocation();
@@ -44,10 +45,7 @@ export const AppLayout = () => {
 
                         <ThemeToggle />
 
-                        <button className="h-9 w-9 rounded-full hover:bg-secondary/80 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors relative">
-                            <Bell size={18} />
-                            <span className="absolute top-2 right-2.5 h-2 w-2 rounded-full bg-red-500 border border-background"></span>
-                        </button>
+                        <NotificationPopOver />
                     </div>
                 </header>
 
