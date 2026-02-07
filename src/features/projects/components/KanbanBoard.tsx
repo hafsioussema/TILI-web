@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, type KeyboardEvent } from "react";
 import { AnimatePresence } from "framer-motion";
 import { Plus, Calendar, GripVertical, Trash2, Edit3 } from "lucide-react";
 import { AnimatedCard } from "@/components/ui/AnimatedCard";
@@ -52,6 +52,7 @@ export const KanbanBoard = ({ projectId }: KanbanBoardProps) => {
   });
   const [taskToDelete, setTaskToDelete] = useState<Task | null>(null);
   const [taskToEdit, setTaskToEdit] = useState<Task | null>(null);
+  const instructionsId = "kanban-keyboard-instructions";
 
   const fetchTasks = useCallback(async () => {
     try {
@@ -119,6 +120,62 @@ export const KanbanBoard = ({ projectId }: KanbanBoardProps) => {
   const getTasksByStatus = (status: TaskStatus) =>
     tasks.filter((t) => t.status === status);
 
+  const focusTask = (status: TaskStatus, index: number) => {
+    const columnTasks = getTasksByStatus(status);
+    if (!columnTasks.length) return;
+    const clampedIndex = Math.max(0, Math.min(index, columnTasks.length - 1));
+    const targetTask = columnTasks[clampedIndex];
+    const targetEl = document.querySelector<HTMLElement>(
+      `[data-kanban-task-id="${targetTask._id}"]`,
+    );
+    targetEl?.focus();
+  };
+
+  const handleCardKeyDown = (
+    event: KeyboardEvent,
+    status: TaskStatus,
+    index: number,
+  ) => {
+    const currentColumnIndex = COLUMNS.findIndex((col) => col.id === status);
+
+    switch (event.key) {
+      case "ArrowDown":
+        event.preventDefault();
+        focusTask(status, index + 1);
+        break;
+      case "ArrowUp":
+        event.preventDefault();
+        focusTask(status, index - 1);
+        break;
+      case "ArrowRight": {
+        const nextColumn = COLUMNS[currentColumnIndex + 1];
+        if (!nextColumn) return;
+        event.preventDefault();
+        focusTask(nextColumn.id, index);
+        break;
+      }
+      case "ArrowLeft": {
+        const prevColumn = COLUMNS[currentColumnIndex - 1];
+        if (!prevColumn) return;
+        event.preventDefault();
+        focusTask(prevColumn.id, index);
+        break;
+      }
+      case "Home":
+        event.preventDefault();
+        focusTask(status, 0);
+        break;
+      case "End": {
+        event.preventDefault();
+        const columnTasks = getTasksByStatus(status);
+        focusTask(status, columnTasks.length - 1);
+        break;
+      }
+      default:
+        break;
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex gap-6 h-full overflow-x-auto pb-4">
@@ -134,7 +191,17 @@ export const KanbanBoard = ({ projectId }: KanbanBoardProps) => {
 
   return (
     <DragDropContext onDragEnd={onDragEnd}>
-      <div className="flex h-full gap-6 overflow-x-auto pb-4 items-start">
+      <div
+        className="flex h-full gap-6 overflow-x-auto pb-4 items-start"
+        role="region"
+        aria-label="Tableau Kanban des tâches"
+        aria-describedby={instructionsId}
+      >
+        <p id={instructionsId} className="sr-only">
+          Navigation clavier : utilisez les flèches gauche et droite pour
+          changer de colonne, flèches haut et bas pour naviguer entre les tâches
+          d'une colonne. Home et End vont au début et à la fin de la colonne.
+        </p>
         {COLUMNS.map((col) => (
           <div
             key={col.id}
@@ -172,6 +239,8 @@ export const KanbanBoard = ({ projectId }: KanbanBoardProps) => {
                       ? "bg-secondary/20"
                       : "bg-transparent",
                   )}
+                  role="list"
+                  aria-label={`Colonne ${col.title}`}
                 >
                   {getTasksByStatus(col.id).map((task, index) => (
                     <Draggable
@@ -195,6 +264,13 @@ export const KanbanBoard = ({ projectId }: KanbanBoardProps) => {
                               snapshot.isDragging &&
                                 "shadow-2xl ring-2 ring-primary/20 border-primary/20 scale-[1.02]",
                             )}
+                            role="listitem"
+                            tabIndex={0}
+                            data-kanban-task-id={task._id}
+                            aria-label={`${task.title}, priorité ${task.priority}, colonne ${col.title}`}
+                            onKeyDown={(event) =>
+                              handleCardKeyDown(event, col.id, index)
+                            }
                           >
                             <div className="flex justify-between items-start mb-2">
                               <span

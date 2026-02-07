@@ -10,6 +10,8 @@ import { type Project, ProjectStatus } from "@/types/documents";
 import { toast } from "sonner";
 import { ProjectCard } from "./components/ProjectCard";
 import { ProjectFilters } from "./components/ProjectFilters";
+import { usePageTitle } from "@/lib/hooks/usePageTitle";
+import { useLoadingAnnouncement } from "@/lib/hooks/useLoadingAnnouncement";
 
 export const ProjectList = () => {
   const { user } = useAuthStore();
@@ -20,6 +22,22 @@ export const ProjectList = () => {
   const [statusFilter, setStatusFilter] = useState<"all" | ProjectStatus>(
     "all",
   );
+
+  // Set page title
+  usePageTitle('Projects');
+  
+  // Announce loading state
+  useEffect(() => {
+    const announcer = document.getElementById('loading-announcer');
+    if (announcer) {
+      if (isLoading) {
+        announcer.textContent = 'Loading projects...';
+      } else {
+        announcer.textContent = `${projects.length} projects loaded`;
+        setTimeout(() => { announcer.textContent = ''; }, 1000);
+      }
+    }
+  }, [isLoading, projects.length]);
 
   const canCreate =
     user?.role === UserRole.ADMIN || user?.role === UserRole.CHEF_PROJET;
@@ -76,15 +94,20 @@ export const ProjectList = () => {
       {/* Controls like Team Members */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div className="relative w-full md:w-96 group">
+          <label htmlFor="project-search" className="sr-only">
+            Search projects
+          </label>
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Search className="h-4 w-4 text-muted-foreground group-focus-within:text-foreground transition-colors" />
+            <Search className="h-4 w-4 text-muted-foreground group-focus-within:text-foreground transition-colors" aria-hidden="true" />
           </div>
           <input
-            type="text"
+            id="project-search"
+            type="search"
             className="block w-full bg-secondary/50 text-foreground pl-10 pr-3 py-2.5 border border-input rounded-lg focus:outline-none focus:ring-1 focus:ring-ring focus:border-ring transition-all placeholder-muted-foreground text-sm"
             placeholder="Rechercher un projet..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
+            aria-label="Search projects by name or description"
           />
         </div>
 

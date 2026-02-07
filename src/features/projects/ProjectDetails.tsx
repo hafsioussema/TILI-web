@@ -23,6 +23,8 @@ import { useAuthStore } from "@/features/auth/useAuthStore";
 import { type Project, ProjectStatus } from "@/types/documents";
 import { UserRole } from "@/types";
 import { toast } from "sonner";
+import { usePageTitle } from "@/lib/hooks/usePageTitle";
+import { Breadcrumbs } from "@/components/ui/Breadcrumbs";
 
 export const ProjectDetails = () => {
   const { id } = useParams<{ id: string }>();
@@ -72,6 +74,17 @@ export const ProjectDetails = () => {
     fetchProject();
   }, [id, navigate]);
 
+  // Set page title
+  usePageTitle(project ? `${project.name} - Project` : 'Project Details');
+
+  const breadcrumbItems = project
+    ? [
+        { label: "Accueil", href: "/" },
+        { label: "Projets", href: "/projects" },
+        { label: project.name },
+      ]
+    : [];
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -85,6 +98,7 @@ export const ProjectDetails = () => {
   return (
     <div className="space-y-6 h-full flex flex-col pb-6">
       <div className="flex flex-col gap-6">
+        <Breadcrumbs items={breadcrumbItems} />
         <button
           onClick={() => navigate("/projects")}
           className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors w-fit"

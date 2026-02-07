@@ -6,6 +6,9 @@ import { Toaster } from 'sonner';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { UsersPage } from '@/pages/UsersPage';
 import { useAuthStore } from '@/features/auth/useAuthStore';
+import { SessionTimeoutWarning } from '@/components/ui/SessionTimeoutWarning';
+import { LoadingAnnouncer } from '@/lib/hooks/useLoadingAnnouncement';
+import { KeyboardShortcutsModal } from '@/components/ui/KeyboardShortcutsModal';
 
 // Protected Route Wrapper
 const ProtectedRoute = ({ children }: { children: ReactNode }) => {
@@ -43,6 +46,24 @@ function App() {
 
   return (
     <BrowserRouter>
+      {/* Route Announcer for Screen Readers */}
+      <div 
+        id="route-announcer" 
+        className="sr-only" 
+        role="status" 
+        aria-live="polite" 
+        aria-atomic="true"
+      />
+      
+      {/* Loading Announcer for async operations */}
+      <LoadingAnnouncer />
+      
+      {/* Session Timeout Warning */}
+      <SessionTimeoutWarning />
+      
+      {/* Keyboard Shortcuts Help */}
+      <KeyboardShortcutsModal />
+      
       <Toaster position="top-right" expand={false} richColors closeButton />
       <Routes>
         <Route path="/login" element={<LoginPage />} />
@@ -86,10 +107,14 @@ function App() {
 // Simple layout wrapper for the main list page to include the Upload button/component
 import { ScheduleMeetingModal } from '@/features/meetings/components/ScheduleMeetingModal';
 import { Plus, Upload, Video } from 'lucide-react';
+import { usePageTitle } from '@/lib/hooks/usePageTitle';
 
 const MeetingsPageLayout = () => {
   const [showUpload, setShowUpload] = React.useState(false);
   const [isScheduleModalOpen, setIsScheduleModalOpen] = React.useState(false);
+  
+  // Set page title
+  usePageTitle('Meetings');
 
   return (
     <div className="space-y-10 relative">
@@ -108,9 +133,10 @@ const MeetingsPageLayout = () => {
           <button
             onClick={() => setIsScheduleModalOpen(true)}
             className="flex-1 lg:flex-none bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 shadow-sm hover:shadow-md transition-all px-5 py-3 rounded-2xl font-bold flex items-center justify-center gap-2 group"
+            aria-label="Schedule a new meeting"
           >
             <div className="p-1 rounded-lg bg-slate-100 group-hover:bg-white transition-colors">
-              <Plus size={18} className="text-slate-600" />
+              <Plus size={18} className="text-slate-600" aria-hidden="true" />
             </div>
             Planifier
           </button>
@@ -118,9 +144,11 @@ const MeetingsPageLayout = () => {
           <button
             onClick={() => setShowUpload(!showUpload)}
             className="flex-1 lg:flex-none bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 shadow-sm hover:shadow-md transition-all px-5 py-3 rounded-2xl font-bold flex items-center justify-center gap-2 group"
+            aria-label={showUpload ? "Close upload panel" : "Import meeting recording"}
+            aria-expanded={showUpload}
           >
             <div className="p-1 rounded-lg bg-slate-100 group-hover:bg-white transition-colors">
-              <Upload size={18} className="text-slate-600" />
+              <Upload size={18} className="text-slate-600" aria-hidden="true" />
             </div>
             {showUpload ? 'Fermer' : 'Importer'}
           </button>
@@ -128,8 +156,9 @@ const MeetingsPageLayout = () => {
           <Link
             to="/meet/new"
             className="flex-1 lg:flex-none bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 hover:scale-[1.02] active:scale-[0.98] transition-all px-6 py-3 rounded-2xl font-bold flex items-center justify-center gap-2.5"
+            aria-label="Start a new meeting now"
           >
-            <Video size={20} className="fill-white/20" />
+            <Video size={20} className="fill-white/20" aria-hidden="true" />
             <span>Démarrer maintenant</span>
           </Link>
         </div>

@@ -4,9 +4,13 @@ import { DashboardAdmin } from './DashboardAdmin';
 import { DashboardPM } from './DashboardPM';
 import { DashboardConsultant } from './DashboardConsultant';
 import { Loader2 } from 'lucide-react';
+import { usePageTitle } from '@/lib/hooks/usePageTitle';
 
 export const Dashboard = () => {
     const { user, isLoading } = useAuthStore();
+    
+    // Set page title
+    usePageTitle('Dashboard');
 
     if (isLoading) {
         return (

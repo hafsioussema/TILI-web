@@ -29,7 +29,7 @@ export const MeetingList: React.FC = () => {
     if (loading) {
         return (
             <div className="flex justify-center py-12">
-                <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+                <Loader2 className="w-8 h-8 text-primary animate-spin" />
             </div>
         );
     }
@@ -40,20 +40,20 @@ export const MeetingList: React.FC = () => {
                 <Link
                     key={meeting.id}
                     to={`/meetings/${meeting.id}`}
-                    className="group bg-white rounded-xl border border-slate-200 p-5 hover:shadow-md transition-shadow cursor-pointer block"
+                    className="group bg-card rounded-2xl border border-border/80 p-5 hover:shadow-md transition-shadow cursor-pointer block"
                 >
                     <div className="flex justify-between items-start mb-4">
-                        <div className="p-2 bg-blue-50 rounded-lg group-hover:bg-blue-100 transition-colors">
-                            <FileAudio className="w-5 h-5 text-blue-600" />
+                        <div className="p-2 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors">
+                            <FileAudio className="w-5 h-5 text-primary" />
                         </div>
                         <StatusBadge status={meeting.status} />
                     </div>
 
-                    <h3 className="font-semibold text-slate-800 line-clamp-1 mb-2 group-hover:text-blue-600 transition-colors">
+                    <h3 className="font-semibold text-foreground line-clamp-1 mb-2 group-hover:text-primary transition-colors">
                         {meeting.title}
                     </h3>
 
-                    <div className="flex items-center gap-4 text-xs text-slate-500">
+                    <div className="flex items-center gap-4 text-xs text-muted-foreground">
                         <div className="flex items-center gap-1.5">
                             <Calendar className="w-3.5 h-3.5" />
                             {new Date(meeting.createdAt).toLocaleDateString()}
@@ -64,8 +64,8 @@ export const MeetingList: React.FC = () => {
             ))}
 
             {meetings.length === 0 && (
-                <div className="col-span-full py-12 text-center text-slate-500 bg-slate-50 rounded-xl border border-dashed border-slate-200">
-                    <FileAudio className="w-10 h-10 mx-auto text-slate-300 mb-3" />
+                <div className="col-span-full py-12 text-center text-muted-foreground bg-muted/40 rounded-2xl border border-dashed border-border/70">
+                    <FileAudio className="w-10 h-10 mx-auto text-muted-foreground/60 mb-3" />
                     <p className="text-sm">Aucun enregistrement ou analyse disponible.</p>
                 </div>
             )}
@@ -75,11 +75,11 @@ export const MeetingList: React.FC = () => {
 
 const StatusBadge = ({ status }: { status: Meeting['status'] }) => {
     const styles = {
-        SCHEDULED: 'bg-blue-100 text-blue-700',
-        UPLOADED: 'bg-slate-100 text-slate-600',
-        PROCESSING: 'bg-yellow-100 text-yellow-700 animate-pulse',
-        COMPLETED: 'bg-green-100 text-green-700',
-        FAILED: 'bg-red-100 text-red-700'
+        SCHEDULED: 'bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-950/40 dark:text-blue-200 dark:border-blue-900/60',
+        UPLOADED: 'bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-900/60 dark:text-slate-200 dark:border-slate-800',
+        PROCESSING: 'bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/40 dark:text-amber-200 dark:border-amber-900/60 animate-pulse',
+        COMPLETED: 'bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-200 dark:border-emerald-900/60',
+        FAILED: 'bg-red-50 text-red-700 border border-red-200 dark:bg-red-950/40 dark:text-red-200 dark:border-red-900/60'
     };
 
     const labels = {

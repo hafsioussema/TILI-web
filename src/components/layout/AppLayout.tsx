@@ -5,6 +5,7 @@ import { ThemeToggle } from '@/features/theme/ThemeToggle';
 import { TiliBot } from '@/features/bot/TiliBot';
 import { AnimatedSidebar } from './AnimatedSidebar';
 import { NotificationPopOver } from '@/features/notifications/components/NotificationPopOver';
+import { AccessibilityPanel } from '@/components/ui/AccessibilityPanel';
 
 export const AppLayout = () => {
     const location = useLocation();
@@ -21,37 +22,72 @@ export const AppLayout = () => {
 
     return (
         <div className="flex h-screen bg-background overflow-hidden relative text-foreground font-sans">
+            {/* Skip Navigation Link */}
+            <a href="#main-content" className="skip-link">
+                Skip to main content
+            </a>
+
+            {/* Route Announcer for Screen Readers */}
+            <div 
+                id="route-announcer" 
+                className="sr-only" 
+                role="status" 
+                aria-live="polite" 
+                aria-atomic="true"
+            />
+
             <AnimatedSidebar />
 
             {/* Main Content */}
             <main className="flex-1 overflow-auto relative z-10 flex flex-col">
-                <header className="h-16 border-b border-border/50 flex items-center justify-between px-8 bg-background/50 backdrop-blur-md sticky top-0 z-30">
-                    <div className="flex items-center gap-4 text-muted-foreground">
-                        <span className="text-sm font-medium">Workspace</span>
-                        <span className="text-muted-foreground/50">/</span>
-                        <span className="text-sm text-foreground font-semibold">
+                <header
+                    className="h-20 border-b border-border/70 flex items-center justify-between px-8 bg-card/80 backdrop-blur-md sticky top-0 z-30"
+                    role="banner"
+                >
+                    <div className="flex items-center gap-3 text-muted-foreground">
+                        <span className="text-xs uppercase tracking-wider font-semibold">Workspace</span>
+                        <span className="text-muted-foreground/50" aria-hidden="true">/</span>
+                        <span className="text-base text-foreground font-semibold">
                             {getPageTitle(location.pathname)}
                         </span>
                     </div>
 
-                    <div className="flex items-center gap-4">
-                        <div className="hidden md:flex items-center h-9 px-3 rounded-md bg-secondary/50 border border-input text-muted-foreground text-sm w-64 hover:border-ring/30 transition-colors cursor-text group focus-within:border-ring/50 focus-within:ring-2 focus-within:ring-ring/20">
-                            <Search size={14} className="mr-2 group-focus-within:text-primary transition-colors" />
+                    <div className="flex items-center gap-3">
+                        <form
+                            role="search"
+                            aria-label="Site search"
+                            className="hidden md:flex items-center h-10 px-3 rounded-lg bg-background border border-input text-muted-foreground text-sm w-72 hover:border-ring/40 transition-colors group focus-within:border-ring focus-within:ring-2 focus-within:ring-ring/20"
+                            onSubmit={(e) => e.preventDefault()}
+                        >
+                            <Search size={16} className="mr-2 group-focus-within:text-primary transition-colors" aria-hidden="true" />
+                            <label htmlFor="global-search" className="sr-only">
+                                Search workspace
+                            </label>
                             <input
+                                id="global-search"
+                                type="search"
                                 className="bg-transparent border-none outline-none w-full placeholder:text-muted-foreground/70"
                                 placeholder="Search..."
+                                aria-label="Search workspace"
+                                aria-describedby="search-shortcut"
                             />
-                            <span className="ml-auto text-[10px] bg-background/50 px-1.5 py-0.5 rounded text-muted-foreground border border-border font-mono">⌘K</span>
-                        </div>
+                            <span
+                                id="search-shortcut"
+                                className="ml-auto text-[10px] bg-background/80 px-1.5 py-0.5 rounded text-muted-foreground border border-border font-mono"
+                                aria-label="Keyboard shortcut: Command K or Control K"
+                            >
+                                ⌘K
+                            </span>
+                        </form>
 
+                        <AccessibilityPanel />
                         <ThemeToggle />
-
                         <NotificationPopOver />
                     </div>
                 </header>
 
-                <div className="flex-1 p-6 md:p-8">
-                    <PageTransition className="max-w-7xl mx-auto w-full">
+                <div id="main-content" className="flex-1 p-6 md:p-8 content-shell" role="main">
+                    <PageTransition className="max-w-7xl mx-auto w-full space-y-8">
                         <Outlet />
                     </PageTransition>
                 </div>
