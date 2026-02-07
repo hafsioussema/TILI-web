@@ -112,12 +112,15 @@ export const TiliBot = () => {
                             height: PANEL_HEIGHT,
                             maxHeight: 'calc(100vh - 120px)',
                         }}
+                        role="dialog"
+                        aria-label="TILIBOT Chat Assistant"
+                        aria-modal="false"
                     >
                         {/* Header */}
                         <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-primary/5 shrink-0">
                             <div className="flex items-center gap-2">
-                                <div className="h-9 w-9 rounded-xl bg-primary/20 flex items-center justify-center">
-                                    <Bot className="h-5 w-5 text-primary" />
+                                <div className="h-9 w-9 rounded-xl bg-primary/20 flex items-center justify-center" aria-hidden="true">
+                                    <Bot className="h-5 w-5 text-primary" aria-hidden="true" />
                                 </div>
                                 <div>
                                     <h3 className="font-semibold text-foreground">TILIBOT</h3>
@@ -128,14 +131,22 @@ export const TiliBot = () => {
                                 type="button"
                                 onClick={() => setIsOpen(false)}
                                 className="p-2 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors"
-                                aria-label="Fermer"
+                                aria-label="Close TILIBOT chat"
+                                title="Close"
                             >
-                                <X className="h-4 w-4" />
+                                <X className="h-4 w-4" aria-hidden="true" />
                             </button>
                         </div>
 
                         {/* Messages */}
-                        <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0">
+                        <div 
+                            className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0"
+                            role="log"
+                            aria-live="polite"
+                            aria-atomic="false"
+                            aria-relevant="additions"
+                            aria-label="Chat messages"
+                        >
                             {isLoadingHistory && (
                                 <div className="text-center py-4 text-sm text-muted-foreground">Chargement...</div>
                             )}
@@ -149,6 +160,7 @@ export const TiliBot = () => {
                                 <div
                                     key={i}
                                     className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                                    role={msg.role === 'assistant' ? 'status' : undefined}
                                 >
                                     <div
                                         className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm ${
@@ -177,8 +189,19 @@ export const TiliBot = () => {
 
                         {/* Input */}
                         <div className="p-3 border-t border-border bg-background/50 shrink-0">
-                            <div className="flex gap-2 items-end">
+                            <form 
+                                onSubmit={(e) => {
+                                    e.preventDefault();
+                                    handleSend();
+                                }}
+                                aria-label="Send message to TILIBOT"
+                                className="flex gap-2 items-end"
+                            >
+                                <label htmlFor="tilibot-input" className="sr-only">
+                                    Type your message to TILIBOT
+                                </label>
                                 <textarea
+                                    id="tilibot-input"
                                     ref={inputRef}
                                     value={input}
                                     onChange={(e) => setInput(e.target.value)}
@@ -187,17 +210,18 @@ export const TiliBot = () => {
                                     rows={1}
                                     className="flex-1 min-h-[40px] max-h-24 resize-none rounded-xl border border-input bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
                                     disabled={isLoading}
+                                    aria-label="Chat message"
                                 />
                                 <button
-                                    type="button"
-                                    onClick={handleSend}
+                                    type="submit"
                                     disabled={!input.trim() || isLoading}
                                     className="h-10 w-10 shrink-0 rounded-xl bg-primary text-primary-foreground flex items-center justify-center hover:bg-primary/90 disabled:opacity-50 disabled:pointer-events-none transition-colors"
-                                    aria-label="Envoyer"
+                                    aria-label={isLoading ? "Sending message..." : "Send message"}
+                                    title={isLoading ? "Sending..." : "Send"}
                                 >
-                                    <Send className="h-4 w-4" />
+                                    <Send className="h-4 w-4" aria-hidden="true" />
                                 </button>
-                            </div>
+                            </form>
                         </div>
                     </motion.div>
                 )}
@@ -209,12 +233,14 @@ export const TiliBot = () => {
                 onClick={() => setIsOpen((o) => !o)}
                 className="fixed z-[99] h-14 w-14 rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary/90 flex items-center justify-center transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background"
                 style={{ right: 24, bottom: 24 }}
-                aria-label={isOpen ? 'Fermer TILIBOT' : 'Ouvrir TILIBOT'}
+                aria-label={isOpen ? 'Close TILIBOT assistant' : 'Open TILIBOT assistant'}
+                aria-expanded={isOpen}
+                title={isOpen ? 'Close TILIBOT' : 'Open TILIBOT'}
             >
                 {isOpen ? (
-                    <X className="h-6 w-6" />
+                    <X className="h-6 w-6" aria-hidden="true" />
                 ) : (
-                    <MessageCircle className="h-6 w-6" />
+                    <MessageCircle className="h-6 w-6" aria-hidden="true" />
                 )}
             </motion.button>
         </>

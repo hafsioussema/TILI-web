@@ -11,6 +11,7 @@ import { cn } from '@/lib/utils';
 import { DocumentUploadModal } from './components/DocumentUploadModal';
 import { DocumentHistoryModal } from './components/DocumentHistoryModal';
 import { DocumentPreviewModal } from './components/DocumentPreviewModal';
+import { usePageTitle } from '@/lib/hooks/usePageTitle';
 
 const typeLabels: Record<DocumentType, string> = {
     [DocumentType.RAPPORT]: 'Rapports',
@@ -48,6 +49,9 @@ export const DocumentsPage = () => {
     const [showUploadModal, setShowUploadModal] = useState(false);
     const [selectedDocForHistory, setSelectedDocForHistory] = useState<TiliDocument | null>(null);
     const [selectedDocForPreview, setSelectedDocForPreview] = useState<TiliDocument | null>(null);
+    
+    // Set page title
+    usePageTitle('Documents');
 
     const canUpload = user?.role === UserRole.ADMIN || user?.role === UserRole.CHEF_PROJET;
     const canViewHistory = user?.role === UserRole.ADMIN || user?.role === UserRole.CHEF_PROJET;
