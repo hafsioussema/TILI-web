@@ -119,20 +119,23 @@ export const ProjectHistory = ({ projectId }: ProjectHistoryProps) => {
                     Chronologie des derniers événements
                 </p>
             </div>
-            <ul className="divide-y divide-border/60 max-h-[60vh] overflow-y-auto list-none m-0 p-0">
+            <ul className="divide-y divide-border/60 max-h-[60vh] overflow-y-auto list-none m-0 p-0" role="list">
                 {items.map((item, index) => {
                     const config = typeConfig[item.type];
                     const Icon = config.icon;
                     return (
-                        <li key={`${item.type}-${item.date}-${index}`}>
-                            <motion.div
+                        <li key={`${item.type}-${item.date}-${index}`} role="listitem">
+                            <motion.button
+                                type="button"
                                 initial={{ opacity: 0, x: -8 }}
                                 animate={{ opacity: 1, x: 0 }}
                                 transition={{ delay: index * 0.03 }}
-                                className="flex gap-4 p-4 hover:bg-secondary/30 transition-colors"
+                                className="flex gap-4 p-4 hover:bg-secondary/30 transition-colors w-full text-left rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
+                                aria-label={`${item.label} - ${formatDate(item.date)}${item.metadata?.userName ? ` par ${item.metadata.userName}` : ''}`}
                             >
                                 <div
                                     className={`shrink-0 w-10 h-10 rounded-xl flex items-center justify-center border ${config.bg} ${config.color} ${config.border}`}
+                                    aria-hidden="true"
                                 >
                                     <Icon className="h-5 w-5" />
                                 </div>
@@ -149,7 +152,7 @@ export const ProjectHistory = ({ projectId }: ProjectHistoryProps) => {
                                         {formatDate(item.date)}
                                     </p>
                                 </div>
-                            </motion.div>
+                            </motion.button>
                         </li>
                     );
                 })}

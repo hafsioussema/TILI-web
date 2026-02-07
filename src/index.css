@@ -133,7 +133,6 @@
   --radius-lg: var(--radius);
   --radius-md: calc(var(--radius) - 2px);
   --radius-sm: calc(var(--radius) - 4px);
-  
   --animate-fade-in: fade-in 0.3s ease-out;
   --animate-slide-up: slide-up 0.4s ease-out;
   
@@ -231,6 +230,64 @@
 
   .skip-link:focus {
     @apply not-sr-only fixed top-4 left-4 z-[100] px-4 py-2 bg-primary text-primary-foreground rounded-lg shadow-lg font-medium;
+  }
+
+  /* ==================================================
+     KEYBOARD NAVIGATION STYLES
+     ================================================== */
+
+  /* Visual indicator that keyboard navigation is active */
+  html[data-keyboard-nav] {
+    --focus-ring-color: hsl(var(--primary));
+    --focus-ring-width: 4px;
+    --focus-ring-offset: 2px;
+  }
+
+  /* Enhanced focus indicators when using keyboard */
+  html[data-keyboard-nav] *:focus-visible {
+    outline: var(--focus-ring-width) solid var(--focus-ring-color);
+    outline-offset: var(--focus-ring-offset);
+    border-radius: 6px;
+    box-shadow: 
+      0 0 0 calc(var(--focus-ring-width) + 2px) var(--focus-ring-color) / 0.2,
+      0 0 0 calc(var(--focus-ring-width) + 6px) var(--focus-ring-color) / 0.1;
+  }
+
+  /* Ensure focus is visible on all interactive elements during keyboard nav */
+  html[data-keyboard-nav] button:focus,
+  html[data-keyboard-nav] a:focus,
+  html[data-keyboard-nav] input:focus,
+  html[data-keyboard-nav] select:focus,
+  html[data-keyboard-nav] textarea:focus,
+  html[data-keyboard-nav] [role="button"]:focus {
+    outline: var(--focus-ring-width) solid var(--focus-ring-color);
+    outline-offset: var(--focus-ring-offset);
+  }
+
+  /* Prevent focus outline on mouse interactions */
+  html:not([data-keyboard-nav]) *:focus-visible {
+    outline: 3px solid hsl(var(--ring));
+    outline-offset: 3px;
+  }
+
+  /* Improve scrollbar visibility during keyboard navigation */
+  html[data-keyboard-nav] ::-webkit-scrollbar-thumb {
+    @apply bg-primary/40 hover:bg-primary/60 transition-colors;
+  }
+
+  /* Focus trap indicator for modals */
+  html[data-keyboard-nav] [role="dialog"]:focus-visible,
+  html[data-keyboard-nav] [role="alertdialog"]:focus-visible {
+    outline: 3px solid hsl(var(--primary));
+    outline-offset: 3px;
+    box-shadow: 0 0 0 6px hsl(var(--primary) / 0.15);
+  }
+
+  /* Ensure keyboard focus works on tab groups and radio groups */
+  html[data-keyboard-nav] [role="tablist"] [role="tab"]:focus,
+  html[data-keyboard-nav] [role="radiogroup"] [role="radio"]:focus {
+    outline: var(--focus-ring-width) solid var(--focus-ring-color);
+    outline-offset: var(--focus-ring-offset);
   }
 
   /* Improve scrollbar aesthetics */

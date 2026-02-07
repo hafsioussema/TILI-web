@@ -156,3 +156,7 @@ dist
 # Vite logs files
 vite.config.js.timestamp-*
 
+# Documentation (ignore all markdown except README.md)
+*.md
+!README.md
+
