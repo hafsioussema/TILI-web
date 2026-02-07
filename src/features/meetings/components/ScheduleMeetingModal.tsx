@@ -187,6 +187,7 @@ export const ScheduleMeetingModal: React.FC<ScheduleMeetingModalProps> = ({
               </label>
               <input
                 type="text"
+                autoFocus
                 required
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
