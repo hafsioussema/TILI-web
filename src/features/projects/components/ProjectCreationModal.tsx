@@ -113,6 +113,7 @@ export const ProjectCreationModal = ({ user, onClose, onSuccess }: ProjectCreati
                                         <label className="text-sm font-medium text-foreground">Nom du projet *</label>
                                         <input
                                             type="text"
+                                            autoFocus
                                             required
                                             value={formData.name}
                                             onChange={e => setFormData({ ...formData, name: e.target.value })}

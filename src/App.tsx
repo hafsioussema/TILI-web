@@ -9,6 +9,8 @@ import { useAuthStore } from '@/features/auth/useAuthStore';
 import { SessionTimeoutWarning } from '@/components/ui/SessionTimeoutWarning';
 import { LoadingAnnouncer } from '@/lib/hooks/useLoadingAnnouncement';
 import { KeyboardShortcutsModal } from '@/components/ui/KeyboardShortcutsModal';
+import { useKeyboardNavigation } from '@/lib/hooks/useKeyboardNavigation';
+import { useGlobalKeyboardShortcuts } from '@/lib/hooks/useGlobalKeyboardShortcuts';
 
 // Protected Route Wrapper
 const ProtectedRoute = ({ children }: { children: ReactNode }) => {
@@ -29,8 +31,17 @@ import { MeetingUpload } from '@/features/meetings/components/MeetingUpload';
 import { LiveMeeting } from '@/features/meetings/components/LiveMeeting';
 import { WeeklyCalendar } from '@/features/meetings/components/WeeklyCalendar';
 
+// Wrapper component inside Router to use keyboard shortcuts
+const AppWithKeyboardShortcuts = () => {
+  useGlobalKeyboardShortcuts();
+  return null;
+};
+
 function App() {
   const checkAuth = useAuthStore((state) => state.checkAuth);
+  
+  // Initialize keyboard navigation tracking (doesn't need Router)
+  useKeyboardNavigation();
 
   useEffect(() => {
     checkAuth();
@@ -46,6 +57,9 @@ function App() {
 
   return (
     <BrowserRouter>
+      {/* Global keyboard shortcuts handler (needs Router context) */}
+      <AppWithKeyboardShortcuts />
+      
       {/* Route Announcer for Screen Readers */}
       <div 
         id="route-announcer" 
