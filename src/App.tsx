@@ -2,6 +2,8 @@ import { useEffect } from 'react';
 import type { ReactNode } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Link } from 'react-router-dom';
 import { LoginPage } from '@/features/auth/LoginPage';
+import { ForgotPasswordPage } from '@/features/auth/ForgotPasswordPage';
+import { ResetPasswordPage } from '@/features/auth/ResetPasswordPage';
 import { Toaster } from 'sonner';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { UsersPage } from '@/pages/UsersPage';
@@ -81,6 +83,8 @@ function App() {
       <Toaster position="top-right" expand={false} richColors closeButton />
       <Routes>
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
 
         <Route path="/" element={
           <ProtectedRoute>

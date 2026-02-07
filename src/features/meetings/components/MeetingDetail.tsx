@@ -1,10 +1,14 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { meetingService } from '../services/meetingService';
+import { documentService } from '../../documents/documentService';
 import type { Meeting } from '../types';
+import type { TiliDocument } from '@/types/documents';
+import { DocumentType } from '@/types/documents';
 import { useAuthStore } from '../../auth/useAuthStore';
-import { Loader2, ArrowLeft, Calendar, FileText, CheckSquare, ListVideo, AlertCircle, Trash2, Users, Pencil, Plus, X, Check } from 'lucide-react';
+import { Loader2, ArrowLeft, Calendar, FileText, CheckSquare, ListVideo, AlertCircle, Trash2, Users, Pencil, Plus, X, Check, Paperclip, Download, Upload } from 'lucide-react';
+import { toast } from 'sonner';
 import ReactMarkdown from 'react-markdown'; // Assuming standard markdown renderer or just plain text
 
 // Simple Markdown renderer fallback if package not present (though likely is or I should install)
@@ -17,9 +21,23 @@ export const MeetingDetail: React.FC = () => {
     const { user: currentUser } = useAuthStore();
     const [meeting, setMeeting] = useState<Meeting | null>(null);
     const [loading, setLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState<'summary' | 'transcript' | 'actions'>('summary');
+    const [activeTab, setActiveTab] = useState<'summary' | 'transcript' | 'actions' | 'documents'>('summary');
     const [showReportModal, setShowReportModal] = useState(false);
     const [error, setError] = useState<string | null>(null);
+
+    // Documents State
+    const [meetingDocuments, setMeetingDocuments] = useState<TiliDocument[]>([]);
+    const [allDocuments, setAllDocuments] = useState<TiliDocument[]>([]);
+    const [showAddDocModal, setShowAddDocModal] = useState(false);
+    const [loadingDocs, setLoadingDocs] = useState(false);
+    
+    // Upload new document state
+    const [showUploadForm, setShowUploadForm] = useState(false);
+    const [uploadFile, setUploadFile] = useState<File | null>(null);
+    const [uploadName, setUploadName] = useState('');
+    const [uploadType, setUploadType] = useState<DocumentType>(DocumentType.CR_REUNION);
+    const [uploadingDoc, setUploadingDoc] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     // Edit Modal States
     const [showEditModal, setShowEditModal] = useState(false);
@@ -66,6 +84,9 @@ export const MeetingDetail: React.FC = () => {
             setMeeting(data);
             setError(null);
 
+            // Load meeting documents
+            loadMeetingDocuments(meetingId);
+
             // Pre-fill edit states
             setEditTitle(data.title);
             const d = new Date(data.date);
@@ -87,6 +108,120 @@ export const MeetingDetail: React.FC = () => {
             }
         } finally {
             setLoading(false);
+        }
+    };
+
+    const loadMeetingDocuments = async (meetingId: string) => {
+        setLoadingDocs(true);
+        try {
+            const docIds = await meetingService.getDocuments(meetingId);
+            if (docIds.length > 0) {
+                // Fetch document details for each ID
+                const docs = await Promise.all(
+                    docIds.map(async (docId) => {
+                        try {
+                            return await documentService.getById(docId);
+                        } catch {
+                            return null;
+                        }
+                    })
+                );
+                setMeetingDocuments(docs.filter((d): d is TiliDocument => d !== null));
+            } else {
+                setMeetingDocuments([]);
+            }
+        } catch (err) {
+            console.error('Failed to load documents:', err);
+        } finally {
+            setLoadingDocs(false);
+        }
+    };
+
+    const loadAllDocuments = async () => {
+        try {
+            const docs = await documentService.getAll();
+            setAllDocuments(docs);
+        } catch (err) {
+            console.error('Failed to load all documents:', err);
+        }
+    };
+
+    const handleAddDocument = async (documentId: string) => {
+        if (!meeting) return;
+        try {
+            await meetingService.addDocument(meeting.id, documentId);
+            loadMeetingDocuments(meeting.id);
+            setShowAddDocModal(false);
+        } catch (err) {
+            console.error('Failed to add document:', err);
+            alert('Erreur lors de l\'ajout du document');
+        }
+    };
+
+    const handleRemoveDocument = async (documentId: string) => {
+        if (!meeting) return;
+        if (!confirm('Êtes-vous sûr de vouloir retirer ce document de la réunion ?')) return;
+        try {
+            await meetingService.removeDocument(meeting.id, documentId);
+            loadMeetingDocuments(meeting.id);
+        } catch (err) {
+            console.error('Failed to remove document:', err);
+            alert('Erreur lors du retrait du document');
+        }
+    };
+
+    const handleDownloadDocument = async (doc: TiliDocument) => {
+        try {
+            await documentService.download(doc._id, doc.name);
+        } catch (err) {
+            console.error('Failed to download document:', err);
+        }
+    };
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            setUploadFile(file);
+            if (!uploadName) {
+                setUploadName(file.name.replace(/\.[^/.]+$/, ''));
+            }
+        }
+    };
+
+    const handleUploadNewDocument = async () => {
+        if (!uploadFile || !uploadName || !meeting) {
+            toast.error('Veuillez sélectionner un fichier et entrer un nom');
+            return;
+        }
+
+        setUploadingDoc(true);
+        try {
+            const newDoc = await documentService.upload(uploadFile, {
+                name: uploadName,
+                type: uploadType,
+                projectId: '',
+                description: `Document associé à la réunion: ${meeting.title}`,
+            });
+            
+            // Associate to meeting
+            await meetingService.addDocument(meeting.id, newDoc._id);
+            
+            // Reload documents
+            loadMeetingDocuments(meeting.id);
+            
+            // Reset upload form
+            setUploadFile(null);
+            setUploadName('');
+            setUploadType(DocumentType.CR_REUNION);
+            setShowUploadForm(false);
+            if (fileInputRef.current) fileInputRef.current.value = '';
+            
+            toast.success('Document uploadé et associé à la réunion');
+        } catch (error) {
+            console.error('Failed to upload document:', error);
+            toast.error('Échec de l\'upload du document');
+        } finally {
+            setUploadingDoc(false);
         }
     };
 
@@ -606,6 +741,12 @@ export const MeetingDetail: React.FC = () => {
                             >
                                 <ListVideo className="w-4 h-4" /> Full Transcript
                             </button>
+                            <button
+                                onClick={() => { setActiveTab('documents'); loadAllDocuments(); }}
+                                className={`px-6 py-4 text-sm font-medium flex items-center gap-2 border-b-2 transition-colors ${activeTab === 'documents' ? 'border-blue-600 text-blue-600 bg-blue-50/50' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+                            >
+                                <Paperclip className="w-4 h-4" /> Documents ({meetingDocuments.length})
+                            </button>
                         </div>
 
                         <div className="p-6">
@@ -637,6 +778,151 @@ export const MeetingDetail: React.FC = () => {
                                         <div className="flex flex-col items-center justify-center py-12 text-slate-400">
                                             <ListVideo className="w-12 h-12 mb-3 opacity-20" />
                                             <p>Aucune transcription disponible.</p>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            {activeTab === 'documents' && (
+                                <div className="space-y-4">
+                                    <div className="flex justify-between items-center flex-wrap gap-2">
+                                        <h3 className="font-semibold text-slate-800">Documents associés</h3>
+                                        <div className="flex gap-2">
+                                            <button
+                                                onClick={() => setShowUploadForm(!showUploadForm)}
+                                                className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium"
+                                            >
+                                                <Upload className="w-4 h-4" /> Uploader
+                                            </button>
+                                            <button
+                                                onClick={() => { loadAllDocuments(); setShowAddDocModal(true); }}
+                                                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+                                            >
+                                                <Plus className="w-4 h-4" /> Ajouter existant
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {/* Upload Form */}
+                                    {showUploadForm && (
+                                        <div className="p-4 border border-green-200 rounded-lg bg-green-50 space-y-3">
+                                            <h4 className="font-medium text-green-800 flex items-center gap-2">
+                                                <Upload className="w-4 h-4" /> Uploader un nouveau document
+                                            </h4>
+                                            <div>
+                                                <label className="block text-xs font-medium text-slate-600 mb-1">
+                                                    Fichier
+                                                </label>
+                                                <input
+                                                    ref={fileInputRef}
+                                                    type="file"
+                                                    onChange={handleFileChange}
+                                                    className="w-full text-sm text-slate-500 file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                                                />
+                                            </div>
+                                            <div className="grid grid-cols-2 gap-3">
+                                                <div>
+                                                    <label className="block text-xs font-medium text-slate-600 mb-1">
+                                                        Nom du document
+                                                    </label>
+                                                    <input
+                                                        type="text"
+                                                        value={uploadName}
+                                                        onChange={(e) => setUploadName(e.target.value)}
+                                                        placeholder="Nom du document"
+                                                        className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-xs font-medium text-slate-600 mb-1">
+                                                        Type
+                                                    </label>
+                                                    <select
+                                                        value={uploadType}
+                                                        onChange={(e) => setUploadType(e.target.value as DocumentType)}
+                                                        className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                                                    >
+                                                        <option value={DocumentType.CR_REUNION}>Compte Rendu Réunion</option>
+                                                        <option value={DocumentType.RAPPORT}>Rapport</option>
+                                                        <option value={DocumentType.ADMINISTRATIF}>Administratif</option>
+                                                        <option value={DocumentType.PROJET}>Projet</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div className="flex gap-2 pt-2">
+                                                <button
+                                                    onClick={() => {
+                                                        setShowUploadForm(false);
+                                                        setUploadFile(null);
+                                                        setUploadName('');
+                                                        if (fileInputRef.current) fileInputRef.current.value = '';
+                                                    }}
+                                                    className="flex-1 px-4 py-2 text-sm text-slate-600 border border-slate-300 rounded-lg hover:bg-slate-100"
+                                                >
+                                                    Annuler
+                                                </button>
+                                                <button
+                                                    onClick={handleUploadNewDocument}
+                                                    disabled={uploadingDoc || !uploadFile}
+                                                    className="flex-1 px-4 py-2 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 flex items-center justify-center gap-2"
+                                                >
+                                                    {uploadingDoc ? (
+                                                        <>
+                                                            <Loader2 className="w-4 h-4 animate-spin" />
+                                                            Upload...
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <Upload className="w-4 h-4" />
+                                                            Uploader et associer
+                                                        </>
+                                                    )}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {loadingDocs ? (
+                                        <div className="flex justify-center py-8">
+                                            <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
+                                        </div>
+                                    ) : meetingDocuments.length === 0 ? (
+                                        <div className="flex flex-col items-center justify-center py-12 text-slate-400">
+                                            <Paperclip className="w-12 h-12 mb-3 opacity-20" />
+                                            <p>Aucun document associé à cette réunion.</p>
+                                            <p className="text-sm mt-2">Cliquez sur "Ajouter un document" pour en associer.</p>
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-2">
+                                            {meetingDocuments.map((doc) => (
+                                                <div key={doc._id} className="flex items-center justify-between p-4 bg-slate-50 rounded-lg border border-slate-200 hover:bg-slate-100 transition-colors">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
+                                                            <FileText className="w-5 h-5 text-blue-600" />
+                                                        </div>
+                                                        <div>
+                                                            <div className="font-medium text-slate-800">{doc.name}</div>
+                                                            <div className="text-xs text-slate-500">{(doc.size / 1024).toFixed(1)} KB • v{doc.version}</div>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <button
+                                                            onClick={() => handleDownloadDocument(doc)}
+                                                            className="p-2 hover:bg-blue-100 rounded-lg transition-colors text-blue-600"
+                                                            title="Télécharger"
+                                                        >
+                                                            <Download className="w-4 h-4" />
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleRemoveDocument(doc._id)}
+                                                            className="p-2 hover:bg-red-100 rounded-lg transition-colors text-red-600"
+                                                            title="Retirer"
+                                                        >
+                                                            <X className="w-4 h-4" />
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            ))}
                                         </div>
                                     )}
                                 </div>
@@ -749,6 +1035,61 @@ export const MeetingDetail: React.FC = () => {
                     </div>
                 </div>
             </div>
+
+            {/* Add Document Modal */}
+            {showAddDocModal && (
+                <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+                    <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden">
+                        <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                            <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+                                <Paperclip className="w-5 h-5 text-blue-600" />
+                                Associer un document
+                            </h3>
+                            <button onClick={() => setShowAddDocModal(false)} className="p-2 hover:bg-slate-200 rounded-lg">
+                                <X className="w-5 h-5 text-slate-500" />
+                            </button>
+                        </div>
+
+                        <div className="p-6 max-h-[60vh] overflow-y-auto">
+                            {allDocuments.length === 0 ? (
+                                <div className="text-center py-8 text-slate-500">
+                                    <Paperclip className="w-12 h-12 mx-auto mb-3 opacity-20" />
+                                    <p>Aucun document disponible.</p>
+                                    <p className="text-sm mt-2">Ajoutez des documents dans la section Documents.</p>
+                                </div>
+                            ) : (
+                                <div className="space-y-2">
+                                    {allDocuments
+                                        .filter(doc => !meetingDocuments.some(md => md._id === doc._id))
+                                        .map((doc) => (
+                                            <button
+                                                key={doc._id}
+                                                onClick={() => handleAddDocument(doc._id)}
+                                                className="w-full flex items-center gap-3 p-4 bg-slate-50 rounded-lg border border-slate-200 hover:bg-blue-50 hover:border-blue-300 transition-colors text-left"
+                                            >
+                                                <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0">
+                                                    <FileText className="w-5 h-5 text-blue-600" />
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="font-medium text-slate-800 truncate">{doc.name}</div>
+                                                    <div className="text-xs text-slate-500">
+                                                        {(doc.size / 1024).toFixed(1)} KB • {doc.type}
+                                                    </div>
+                                                </div>
+                                                <Plus className="w-5 h-5 text-blue-600 flex-shrink-0" />
+                                            </button>
+                                        ))}
+                                    {allDocuments.filter(doc => !meetingDocuments.some(md => md._id === doc._id)).length === 0 && (
+                                        <div className="text-center py-4 text-slate-500">
+                                            Tous les documents sont déjà associés.
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuthStore } from './useAuthStore';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Loader2, ArrowRight, ShieldCheck, Eye, EyeOff, Info } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -117,6 +117,14 @@ export const LoginPage = () => {
                             <p id="password-helper" className="text-xs text-muted-foreground">
                                 8 caracteres minimum.
                             </p>
+                            <div className="text-right">
+                                <Link
+                                    to="/forgot-password"
+                                    className="text-xs text-primary hover:underline"
+                                >
+                                    Mot de passe oublié ?
+                                </Link>
+                            </div>
                         </div>
 
                         {error && (

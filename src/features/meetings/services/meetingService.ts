@@ -83,4 +83,20 @@ export const meetingService = {
         const response = await apiClient.post(`${API_URL}/${id}`, data);
         return response.data;
     },
+
+    // Document association methods
+    addDocument: async (meetingId: string, documentId: string): Promise<Meeting> => {
+        const response = await apiClient.post(`${API_URL}/${meetingId}/documents`, { documentId });
+        return response.data;
+    },
+
+    removeDocument: async (meetingId: string, documentId: string): Promise<Meeting> => {
+        const response = await apiClient.delete(`${API_URL}/${meetingId}/documents/${documentId}`);
+        return response.data;
+    },
+
+    getDocuments: async (meetingId: string): Promise<string[]> => {
+        const response = await apiClient.get(`${API_URL}/${meetingId}/documents`);
+        return response.data;
+    },
 };

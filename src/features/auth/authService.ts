@@ -26,4 +26,29 @@ export const authService = {
         const response = await apiClient.post<{ message: string }>('/auth/change-password', data);
         return response.data;
     },
+
+    forgotPassword: async (email: string): Promise<{ message: string }> => {
+        const response = await apiClient.post<{ message: string }>('/auth/forgot-password', { email });
+        return response.data;
+    },
+
+    resetPassword: async (email: string, otpCode: string, newPassword: string): Promise<{ message: string }> => {
+        const response = await apiClient.post<{ message: string }>('/auth/reset-password', { 
+            email, 
+            otpCode, 
+            newPassword 
+        });
+        return response.data;
+    },
+
+    uploadAvatar: async (file: File): Promise<{ message: string; avatar: string }> => {
+        const formData = new FormData();
+        formData.append('avatar', file);
+        const response = await apiClient.post<{ message: string; avatar: string }>('/auth/profile/avatar', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+        return response.data;
+    },
 };

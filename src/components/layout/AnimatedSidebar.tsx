@@ -1,15 +1,17 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/features/auth/useAuthStore';
-import { Users, LayoutDashboard, LogOut, ChevronRight, Command, FolderKanban, FileText, Calendar } from 'lucide-react';
+import { Users, LayoutDashboard, LogOut, ChevronRight, Command, FolderKanban, FileText, Calendar, Settings } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { UserRole } from '@/types';
+import { ProfileSettingsModal } from '@/components/ui/ProfileSettingsModal';
 
 export const AnimatedSidebar = () => {
     const { user, logout } = useAuthStore();
     const navigate = useNavigate();
     const [isSidebarOpen, setSidebarOpen] = useState(true);
+    const [showProfileModal, setShowProfileModal] = useState(false);
 
     const handleLogout = () => {
         logout();
@@ -145,16 +147,42 @@ export const AnimatedSidebar = () => {
 
                 {isSidebarOpen && user && (
                     <div className="mt-4 px-3 py-3 bg-card rounded-xl border border-border/70 flex items-center gap-3" role="status" aria-label="Current user information">
-                        <div className="h-9 w-9 rounded-full bg-gradient-to-tr from-primary to-emerald-500 flex items-center justify-center text-xs font-bold text-white" aria-hidden="true">
-                            {user.prenom?.[0]}
-                        </div>
-                        <div className="overflow-hidden">
+                        <button 
+                            onClick={() => setShowProfileModal(true)}
+                            className="h-9 w-9 rounded-full bg-gradient-to-tr from-primary to-emerald-500 flex items-center justify-center text-xs font-bold text-white overflow-hidden hover:ring-2 hover:ring-primary/50 transition-all cursor-pointer"
+                            aria-hidden="true"
+                            title="Modifier le profil"
+                        >
+                            {user.avatar ? (
+                                <img 
+                                    src={`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}${user.avatar}`}
+                                    alt="Avatar"
+                                    className="h-full w-full object-cover"
+                                />
+                            ) : (
+                                user.prenom?.[0]
+                            )}
+                        </button>
+                        <div className="overflow-hidden flex-1">
                             <p className="text-sm font-semibold text-foreground truncate">{user.prenom} {user.nom}</p>
                             <p className="text-[10px] text-muted-foreground truncate uppercase tracking-wider">{user.role}</p>
                         </div>
+                        <button
+                            onClick={() => setShowProfileModal(true)}
+                            className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+                            title="Paramètres du profil"
+                        >
+                            <Settings size={14} />
+                        </button>
                     </div>
                 )}
             </div>
+
+            {/* Profile Settings Modal */}
+            <ProfileSettingsModal 
+                isOpen={showProfileModal} 
+                onClose={() => setShowProfileModal(false)} 
+            />
 
             {/* Toggle Button */}
             <button

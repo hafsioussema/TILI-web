@@ -10,6 +10,7 @@ import {
   CheckCircle2,
   Trash2,
   Edit3,
+  MessageCircle,
 } from "lucide-react";
 import { PremiumButton } from "@/components/ui/PremiumButton";
 import { AnimatedCard } from "@/components/ui/AnimatedCard";
@@ -25,6 +26,8 @@ import { UserRole } from "@/types";
 import { toast } from "sonner";
 import { usePageTitle } from "@/lib/hooks/usePageTitle";
 import { Breadcrumbs } from "@/components/ui/Breadcrumbs";
+import { ProjectChatPanel, ChatButton } from "@/components/messages";
+import { useMessagesStore } from "@/lib/messagesStore";
 
 export const ProjectDetails = () => {
   const { id } = useParams<{ id: string }>();
@@ -41,6 +44,8 @@ export const ProjectDetails = () => {
   const [showMembersModal, setShowMembersModal] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  
+  const { isChatPanelOpen } = useMessagesStore();
 
   const managerId =
     typeof project?.managerId === "object" && project?.managerId?._id
@@ -121,6 +126,9 @@ export const ProjectDetails = () => {
           </div>
 
           <div className="flex items-center gap-3">
+            {/* Chat Button */}
+            {id && <ChatButton projectId={id} />}
+            
             {canEditProject && (
               <PremiumButton
                 variant="outline"
@@ -366,6 +374,20 @@ export const ProjectDetails = () => {
           />
         )}
       </AnimatePresence>
+
+      {/* Project Chat Panel */}
+      {id && (
+        <ProjectChatPanel
+          projectId={id}
+          projectName={project.name}
+          members={(project as any).members?.map((m: any) => ({
+            _id: m._id,
+            nom: m.nom,
+            prenom: m.prenom,
+            avatar: m.avatar,
+          })) || []}
+        />
+      )}
     </div>
   );
 };

@@ -18,7 +18,12 @@ export const documentService = {
         formData.append('file', file);
         formData.append('name', dto.name);
         formData.append('type', dto.type);
-        formData.append('projectId', dto.projectId);
+        if (dto.projectId) {
+            formData.append('projectId', dto.projectId);
+        }
+        if (dto.meetingId) {
+            formData.append('meetingId', dto.meetingId);
+        }
         if (dto.description) {
             formData.append('description', dto.description);
         }
@@ -117,5 +122,13 @@ export const documentService = {
      */
     delete: async (id: string): Promise<void> => {
         await apiClient.delete(`${BASE_URL}/${id}`);
+    },
+
+    /**
+     * Alias for getAll - Get all documents
+     */
+    getAllDocuments: async (): Promise<TiliDocument[]> => {
+        const response = await apiClient.get<TiliDocument[]>(BASE_URL);
+        return response.data;
     },
 };
