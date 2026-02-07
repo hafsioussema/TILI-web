@@ -4,7 +4,7 @@ import { useParams, Link } from 'react-router-dom';
 import { meetingService } from '../services/meetingService';
 import type { Meeting } from '../types';
 import { useAuthStore } from '../../auth/useAuthStore';
-import { Loader2, ArrowLeft, Calendar, FileText, CheckSquare, ListVideo, AlertCircle, Trash2, Users, Pencil, Plus, X } from 'lucide-react';
+import { Loader2, ArrowLeft, Calendar, FileText, CheckSquare, ListVideo, AlertCircle, Trash2, Users, Pencil, Plus, X, Check } from 'lucide-react';
 import ReactMarkdown from 'react-markdown'; // Assuming standard markdown renderer or just plain text
 
 // Simple Markdown renderer fallback if package not present (though likely is or I should install)
@@ -282,14 +282,22 @@ export const MeetingDetail: React.FC = () => {
 
                         {/* Actions */}
                         <div className="flex gap-3 pt-4">
-                            {!isPast && (
-                                <Link
-                                    to={`/meet/${meeting.id}`}
-                                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-xl transition-all flex items-center justify-center gap-2"
-                                >
-                                    🎥 Rejoindre la Réunion
-                                </Link>
+                            {(meeting.status as string) === 'COMPLETED' ? (
+                                <div className="flex-1 bg-slate-100 text-slate-500 font-semibold py-3 px-6 rounded-xl flex items-center justify-center gap-2 cursor-not-allowed border border-slate-200">
+                                    <Check className="w-5 h-5" />
+                                    Réunion terminée
+                                </div>
+                            ) : (
+                                (!isPast || isToday) && (
+                                    <Link
+                                        to={`/meet/${meeting.id}`}
+                                        className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-xl transition-all flex items-center justify-center gap-2"
+                                    >
+                                        🎥 Rejoindre la Réunion
+                                    </Link>
+                                )
                             )}
+
                             {isOrganizer && (
                                 <>
                                     {!isPast && (
@@ -577,7 +585,7 @@ export const MeetingDetail: React.FC = () => {
                                 className="w-full max-h-[500px] mx-auto"
                                 playsInline
                             >
-                                <source src={`http://localhost:3000/${meeting.audioUrl}`} />
+                                <source src={`http://localhost:3000/meetings/${meeting.id}/file`} />
                                 Your browser does not support the video tag.
                             </video>
                         </div>
@@ -605,8 +613,14 @@ export const MeetingDetail: React.FC = () => {
                                 <div className="prose prose-sm max-w-none text-slate-700">
                                     {meeting.summary ? (
                                         <ReactMarkdown>{meeting.summary.content}</ReactMarkdown>
+                                    ) : (meeting.status === 'PROCESSING' || meeting.status === 'UPLOADED') ? (
+                                        <EmptyState message="L'IA génère le résumé..." />
                                     ) : (
-                                        <EmptyState message="Summary being generated..." />
+                                        <div className="flex flex-col items-center justify-center py-12 text-slate-400">
+                                            <FileText className="w-12 h-12 mb-3 opacity-20" />
+                                            <p>Aucun résumé disponible.</p>
+                                            <p className="text-sm mt-2">L'enregistrement audio est manquant ou trop court.</p>
+                                        </div>
                                     )}
                                 </div>
                             )}
@@ -617,8 +631,13 @@ export const MeetingDetail: React.FC = () => {
                                         <div className="text-slate-700 leading-relaxed whitespace-pre-wrap">
                                             {meeting.transcript.content}
                                         </div>
+                                    ) : (meeting.status === 'PROCESSING' || meeting.status === 'UPLOADED') ? (
+                                        <EmptyState message="Transcription en cours..." />
                                     ) : (
-                                        <EmptyState message="Transcript processing..." />
+                                        <div className="flex flex-col items-center justify-center py-12 text-slate-400">
+                                            <ListVideo className="w-12 h-12 mb-3 opacity-20" />
+                                            <p>Aucune transcription disponible.</p>
+                                        </div>
                                     )}
                                 </div>
                             )}
@@ -714,8 +733,17 @@ export const MeetingDetail: React.FC = () => {
                             })()
                         ) : (
                             <div className="p-8 text-center text-slate-500 text-sm flex flex-col items-center">
-                                <Loader2 className="w-5 h-5 animate-spin mb-2 opacity-50" />
-                                <span className="opacity-70">Generating report...</span>
+                                {(meeting.status === 'PROCESSING' || meeting.status === 'UPLOADED') ? (
+                                    <>
+                                        <Loader2 className="w-5 h-5 animate-spin mb-2 opacity-50" />
+                                        <span className="opacity-70">Génération du rapport...</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Users className="w-6 h-6 mb-2 opacity-20" />
+                                        <p>Aucune donnée de présence.</p>
+                                    </>
+                                )}
                             </div>
                         )}
                     </div>

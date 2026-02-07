@@ -13,7 +13,7 @@ export function ThemeToggle() {
     return (
         <button
             onClick={toggleTheme}
-            className="relative h-9 w-9 rounded-full bg-secondary text-secondary-foreground flex items-center justify-center border border-border overflow-hidden hover:bg-muted transition-colors focus:outline-none focus:ring-1 focus:ring-ring"
+            className="relative h-11 w-11 rounded-xl bg-secondary text-secondary-foreground flex items-center justify-center border border-border overflow-hidden hover:bg-muted transition-colors focus:outline-none focus:ring-2 focus:ring-ring"
             title="Toggle Theme"
         >
             <motion.div

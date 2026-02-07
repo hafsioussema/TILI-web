@@ -23,9 +23,9 @@ export function AnimatedCard({
             transition={{ duration: 0.4, ease: "easeOut" }}
             whileHover={!noHover ? { y: -5, transition: { duration: 0.2 } } : undefined}
             className={cn(
-                "rounded-xl p-6",
-                glass ? "glass-card" : "bg-card text-card-foreground border border-border shadow-sm",
-                !noHover && "hover:shadow-md hover:border-primary/20",
+                "rounded-2xl p-6",
+                glass ? "glass-card" : "bg-card text-card-foreground border border-border/80 shadow-sm",
+                !noHover && "hover:shadow-md hover:border-primary/30",
                 className
             )}
             {...props}
