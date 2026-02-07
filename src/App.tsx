@@ -18,6 +18,7 @@ const ProtectedRoute = ({ children }: { children: ReactNode }) => {
 
 import { Dashboard } from '@/features/dashboard/Dashboard';
 import { ProjectList } from '@/features/projects/ProjectList';
+import { ProjectDetails } from '@/features/projects/ProjectDetails';
 import { DocumentsPage } from '@/features/documents/DocumentsPage';
 import { MeetingList } from '@/features/meetings/components/MeetingList';
 import { MeetingDetail } from '@/features/meetings/components/MeetingDetail';
@@ -55,6 +56,7 @@ function App() {
 
           <Route index element={<Dashboard />} />
           <Route path="projects" element={<ProjectList />} />
+          <Route path="projects/:id" element={<ProjectDetails />} />
           <Route path="documents" element={<DocumentsPage />} />
 
           {/* Meeting Routes */}

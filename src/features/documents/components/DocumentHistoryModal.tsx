@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { X, Upload, Download, RefreshCw, Trash2, User } from 'lucide-react';
+import { X, Upload, Download, RefreshCw, Trash2, User, Clock } from 'lucide-react';
 import { type TiliDocument, type DocumentHistory, DocumentAction, type DocumentUser } from '@/types/documents';
 import { documentService } from '../documentService';
 import { cn } from '@/lib/utils';
@@ -45,9 +45,11 @@ export const DocumentHistoryModal = ({ document, onClose }: DocumentHistoryModal
         });
     };
 
-    const getUserName = (user: string | DocumentUser): string => {
+    const getUserName = (user: string | DocumentUser | null | undefined): string => {
+        if (!user) return 'Utilisateur inconnu';
         if (typeof user === 'string') return 'Utilisateur';
-        return `${user.prenom} ${user.nom}`;
+        if (!user.prenom && !user.nom) return user.email || 'Utilisateur';
+        return `${user.prenom || ''} ${user.nom || ''}`.trim() || 'Utilisateur';
     };
 
     return (
@@ -108,7 +110,11 @@ export const DocumentHistoryModal = ({ document, onClose }: DocumentHistoryModal
 
                             <div className="space-y-6">
                                 {history.map((item, index) => {
-                                    const actionConfig = actionLabels[item.action];
+                                    const actionConfig = actionLabels[item.action] || {
+                                        label: 'Action inconnue',
+                                        icon: Clock,
+                                        color: 'text-gray-500 bg-gray-500/10'
+                                    };
                                     const ActionIcon = actionConfig.icon;
 
                                     return (
