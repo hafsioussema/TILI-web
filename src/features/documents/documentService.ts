@@ -51,6 +51,17 @@ export const documentService = {
     },
 
     /**
+     * Get document as blob for preview (inline viewing without download)
+     */
+    getPreviewBlob: async (id: string): Promise<Blob> => {
+        const response = await apiClient.get(`${BASE_URL}/${id}/download`, {
+            responseType: 'blob',
+        });
+        const contentType = response.headers['content-type'] || 'application/octet-stream';
+        return new Blob([response.data], { type: contentType });
+    },
+
+    /**
      * Download a document
      */
     download: async (id: string, fileName: string): Promise<void> => {
@@ -58,10 +69,16 @@ export const documentService = {
             responseType: 'blob',
         });
 
-        // Create download link
-        const url = window.URL.createObjectURL(new Blob([response.data]));
+        // Get content type from headers
+        const contentType = response.headers['content-type'] || 'application/octet-stream';
+
+        // Create download link with explicit MIME type
+        const url = window.URL.createObjectURL(new Blob([response.data], { type: contentType }));
         const link = document.createElement('a');
         link.href = url;
+
+        // Ensure fileName has extension if missing and we can detect it
+        // (Simple check for now, backend should ideally provide correct name)
         link.setAttribute('download', fileName);
         document.body.appendChild(link);
         link.click();

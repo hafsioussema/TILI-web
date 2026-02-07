@@ -9,6 +9,7 @@ import { projectService } from '@/features/projects/projectService';
 import { cn } from '@/lib/utils';
 
 interface DocumentUploadModalProps {
+    initialProjectId?: string;
     onClose: () => void;
     onSuccess: () => void;
 }
@@ -20,7 +21,7 @@ const typeLabels: Record<DocumentType, string> = {
     [DocumentType.PROJET]: 'Document de projet',
 };
 
-export const DocumentUploadModal = ({ onClose, onSuccess }: DocumentUploadModalProps) => {
+export const DocumentUploadModal = ({ initialProjectId, onClose, onSuccess }: DocumentUploadModalProps) => {
     const [file, setFile] = useState<File | null>(null);
     const [isDragging, setIsDragging] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
@@ -30,7 +31,7 @@ export const DocumentUploadModal = ({ onClose, onSuccess }: DocumentUploadModalP
     const [formData, setFormData] = useState<CreateDocumentDto>({
         name: '',
         type: DocumentType.PROJET,
-        projectId: '',
+        projectId: initialProjectId || '',
         description: '',
     });
 

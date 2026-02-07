@@ -63,6 +63,7 @@ export interface Project {
     members: (string | DocumentUser)[];
     startDate?: string;
     endDate?: string;
+    progress: number;
     createdAt: string;
     updatedAt: string;
 }
@@ -94,6 +95,7 @@ export interface CreateProjectDto {
     members?: string[];
     startDate?: string;
     endDate?: string;
+    progress?: number;
 }
 
 export interface UpdateProjectDto {
@@ -102,6 +104,7 @@ export interface UpdateProjectDto {
     status?: ProjectStatus;
     members?: string[];
     endDate?: string;
+    progress?: number;
 }
 
 export interface QueryProjectsDto {

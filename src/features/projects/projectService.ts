@@ -9,6 +9,20 @@ import type {
 
 const BASE_URL = '/projects';
 
+export interface ProjectHistoryItem {
+    type: 'project_created' | 'document_added' | 'task_created';
+    date: string;
+    label: string;
+    metadata?: {
+        documentId?: string;
+        documentName?: string;
+        taskId?: string;
+        taskTitle?: string;
+        taskStatus?: string;
+        userName?: string;
+    };
+}
+
 export const projectService = {
     /**
      * Create a new project
@@ -36,6 +50,14 @@ export const projectService = {
      */
     getById: async (id: string): Promise<Project> => {
         const response = await apiClient.get<Project>(`${BASE_URL}/${id}`);
+        return response.data;
+    },
+
+    /**
+     * Get project activity history (timeline)
+     */
+    getHistory: async (id: string): Promise<ProjectHistoryItem[]> => {
+        const response = await apiClient.get<ProjectHistoryItem[]>(`${BASE_URL}/${id}/history`);
         return response.data;
     },
 

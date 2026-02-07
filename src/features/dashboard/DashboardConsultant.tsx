@@ -1,7 +1,14 @@
+import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
+import { StatsCards } from './components/StatsCards';
 import { ActiveProjects } from './components/ActiveProjects';
+import { RecentActivity } from './components/RecentActivity';
 import { useAuthStore } from '@/features/auth/useAuthStore';
-import { AnimatedCard } from '@/components/ui/AnimatedCard';
+import { format } from 'date-fns';
+import { fr } from 'date-fns/locale';
+import { dashboardService, type DashboardStats, type GlobalActivity } from './dashboardService';
+import { projectService } from '@/features/projects/projectService';
+import { toast } from 'sonner';
 
 const container = {
     hidden: { opacity: 0 },
@@ -19,40 +26,68 @@ const item = {
 };
 
 export const DashboardConsultant = () => {
-    const user = useAuthStore((state) => state.user);
+    const { user } = useAuthStore();
+    const [stats, setStats] = useState<DashboardStats>();
+    const [activities, setActivities] = useState<GlobalActivity[]>([]);
+    const [averageProgress, setAverageProgress] = useState<number | undefined>();
+    const [isLoading, setIsLoading] = useState(true);
+
+    const fetchData = useCallback(async () => {
+        setIsLoading(true);
+        try {
+            const [statsData, activityData, projectsData] = await Promise.all([
+                dashboardService.getStats(),
+                dashboardService.getActivity(6),
+                projectService.getAll().catch(() => [])
+            ]);
+            setStats(statsData);
+            setActivities(activityData);
+            const total = projectsData.length;
+            const avg = total > 0
+                ? projectsData.reduce((sum, p) => sum + Math.min(100, Math.max(0, Number(p.progress) ?? 0)), 0) / total
+                : undefined;
+            setAverageProgress(avg);
+        } catch (error) {
+            console.error('Failed to fetch dashboard data:', error);
+            toast.error('Erreur lors du chargement des données');
+        } finally {
+            setIsLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        fetchData();
+    }, [fetchData]);
 
     return (
         <motion.div
-            className="space-y-8"
+            className="space-y-8 pb-10"
             variants={container}
             initial="hidden"
             animate="show"
         >
-            <motion.div variants={item} className="mb-6">
-                <h1 className="text-2xl font-bold tracking-tight text-foreground">
-                    Mes Projets
+            <motion.div variants={item}>
+                <h1 className="text-3xl font-bold tracking-tight text-gradient-primary">
+                    Mon Espace Consultant
                 </h1>
-                <p className="text-muted-foreground mt-1">
-                    Bienvenue, {user?.prenom}. Voici un aperçu de vos missions en cours.
+                <p className="text-muted-foreground mt-2 text-lg">
+                    Bonjour <span className="text-foreground font-medium">{user?.prenom}</span>. Voici les activités récentes sur vos projets d'affectation.
                 </p>
+                <p className="text-sm text-muted-foreground/80 mt-1 capitalize">
+                    {format(new Date(), 'EEEE d MMMM yyyy', { locale: fr })}
+                </p>
+            </motion.div>
+
+            <motion.div variants={item}>
+                <StatsCards stats={stats} isLoading={isLoading} averageProgress={averageProgress} />
             </motion.div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <motion.div variants={item} className="lg:col-span-2">
-                    {/* Consultant only sees projects they are assigned to */}
                     <ActiveProjects />
                 </motion.div>
-
                 <motion.div variants={item} className="lg:col-span-1">
-                    <AnimatedCard>
-                        <div className="p-4">
-                            <h3 className="font-semibold mb-2">Instructions</h3>
-                            <p className="text-sm text-muted-foreground">
-                                En tant que consultant, vous avez accès aux documents et réunions liés à vos projets.
-                                Veuillez consulter la section "Documents" pour les derniers fichiers.
-                            </p>
-                        </div>
-                    </AnimatedCard>
+                    <RecentActivity activities={activities} isLoading={isLoading} />
                 </motion.div>
             </div>
         </motion.div>

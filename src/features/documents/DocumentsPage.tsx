@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FileText, FileSpreadsheet, FileImage, File, Upload, Download, Clock, Search } from 'lucide-react';
+import { FileText, FileSpreadsheet, FileImage, File, Upload, Download, Clock, Search, Eye } from 'lucide-react';
 import { toast } from 'sonner';
 import { AnimatedCard } from '@/components/ui/AnimatedCard';
 import { PremiumButton } from '@/components/ui/PremiumButton';
@@ -10,6 +10,7 @@ import { documentService } from './documentService';
 import { cn } from '@/lib/utils';
 import { DocumentUploadModal } from './components/DocumentUploadModal';
 import { DocumentHistoryModal } from './components/DocumentHistoryModal';
+import { DocumentPreviewModal } from './components/DocumentPreviewModal';
 
 const typeLabels: Record<DocumentType, string> = {
     [DocumentType.RAPPORT]: 'Rapports',
@@ -46,6 +47,7 @@ export const DocumentsPage = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [showUploadModal, setShowUploadModal] = useState(false);
     const [selectedDocForHistory, setSelectedDocForHistory] = useState<TiliDocument | null>(null);
+    const [selectedDocForPreview, setSelectedDocForPreview] = useState<TiliDocument | null>(null);
 
     const canUpload = user?.role === UserRole.ADMIN || user?.role === UserRole.CHEF_PROJET;
     const canViewHistory = user?.role === UserRole.ADMIN || user?.role === UserRole.CHEF_PROJET;
@@ -246,7 +248,20 @@ export const DocumentsPage = () => {
                                                 {/* Hover Actions */}
                                                 <div className="absolute inset-0 bg-gradient-to-t from-card via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-xl flex items-end justify-center pb-4 gap-2">
                                                     <button
-                                                        onClick={() => handleDownload(doc)}
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setSelectedDocForPreview(doc);
+                                                        }}
+                                                        className="p-2 rounded-lg bg-card border border-border text-foreground shadow-lg hover:scale-105 transition-transform"
+                                                        title="Aperçu"
+                                                    >
+                                                        <Eye className="h-4 w-4" />
+                                                    </button>
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleDownload(doc);
+                                                        }}
                                                         className="p-2 rounded-lg bg-primary text-primary-foreground shadow-lg hover:scale-105 transition-transform"
                                                         title="Télécharger"
                                                     >
@@ -254,7 +269,10 @@ export const DocumentsPage = () => {
                                                     </button>
                                                     {canViewHistory && (
                                                         <button
-                                                            onClick={() => setSelectedDocForHistory(doc)}
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setSelectedDocForHistory(doc);
+                                                            }}
                                                             className="p-2 rounded-lg bg-card border border-border text-foreground shadow-lg hover:scale-105 transition-transform"
                                                             title="Historique"
                                                         >
@@ -288,6 +306,14 @@ export const DocumentsPage = () => {
                 <DocumentHistoryModal
                     document={selectedDocForHistory}
                     onClose={() => setSelectedDocForHistory(null)}
+                />
+            )}
+
+            {/* Preview Modal */}
+            {selectedDocForPreview && (
+                <DocumentPreviewModal
+                    document={selectedDocForPreview}
+                    onClose={() => setSelectedDocForPreview(null)}
                 />
             )}
         </motion.div>
