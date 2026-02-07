@@ -62,6 +62,14 @@ export const projectService = {
     },
 
     /**
+     * Close project (set status COMPLETED, mark all tasks DONE, progress 100)
+     */
+    close: async (id: string): Promise<Project> => {
+        const response = await apiClient.post<Project>(`${BASE_URL}/${id}/close`);
+        return response.data;
+    },
+
+    /**
      * Update a project
      */
     update: async (id: string, dto: UpdateProjectDto): Promise<Project> => {

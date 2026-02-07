@@ -2,21 +2,38 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { KanbanBoard } from './components/KanbanBoard';
-import { ArrowLeft, Calendar, Users as UsersIcon, Settings, Layout } from 'lucide-react';
+import { ArrowLeft, Calendar, Users as UsersIcon, Layout, CheckCircle2, Trash2 } from 'lucide-react';
 import { PremiumButton } from '@/components/ui/PremiumButton';
 import { AnimatedCard } from '@/components/ui/AnimatedCard';
+import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
 import { projectService } from './projectService';
 import { ProjectDocuments } from '@/features/documents/components/ProjectDocuments';
 import { ProjectHistory } from './components/ProjectHistory';
-import { type Project } from '@/types/documents';
+import { useAuthStore } from '@/features/auth/useAuthStore';
+import { type Project, ProjectStatus } from '@/types/documents';
+import { UserRole } from '@/types';
 import { toast } from 'sonner';
 
 export const ProjectDetails = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
+    const { user } = useAuthStore();
     const [project, setProject] = useState<Project | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [activeTab, setActiveTab] = useState<'tasks' | 'documents' | 'history'>('tasks');
+    const [showCloseModal, setShowCloseModal] = useState(false);
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [isClosing, setIsClosing] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
+
+    const managerId = typeof project?.managerId === 'object' && project?.managerId?._id
+        ? (project.managerId as any)._id
+        : project?.managerId;
+    const isManager = user?.id && managerId && String(managerId) === String(user.id);
+    const canDeleteProject = user?.role === UserRole.ADMIN || isManager;
+    const canCloseProject =
+        (user?.role === UserRole.ADMIN || user?.role === UserRole.CHEF_PROJET) &&
+        project?.status === ProjectStatus.ACTIVE;
 
     useEffect(() => {
         const fetchProject = async () => {
@@ -68,9 +85,25 @@ export const ProjectDetails = () => {
                     </div>
 
                     <div className="flex items-center gap-3">
-                        <PremiumButton variant="outline">
-                            <Settings className="mr-2 h-4 w-4" /> Gérer
-                        </PremiumButton>
+                        {canCloseProject && (
+                            <PremiumButton
+                                variant="outline"
+                                onClick={() => setShowCloseModal(true)}
+                                disabled={isClosing}
+                            >
+                                <CheckCircle2 className="mr-2 h-4 w-4" /> Clôturer
+                            </PremiumButton>
+                        )}
+                        {canDeleteProject && (
+                            <PremiumButton
+                                variant="outline"
+                                onClick={() => setShowDeleteModal(true)}
+                                disabled={isDeleting}
+                                className="text-destructive hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30"
+                            >
+                                <Trash2 className="mr-2 h-4 w-4" /> Supprimer
+                            </PremiumButton>
+                        )}
                     </div>
                 </div>
 
@@ -170,6 +203,54 @@ export const ProjectDetails = () => {
                     )}
                 </AnimatePresence>
             </div>
+
+            <ConfirmationModal
+                isOpen={showCloseModal}
+                onClose={() => setShowCloseModal(false)}
+                onConfirm={async () => {
+                    if (!id) return;
+                    setIsClosing(true);
+                    try {
+                        const updated = await projectService.close(id);
+                        setProject(updated);
+                        setShowCloseModal(false);
+                        toast.success('Projet clôturé. Toutes les tâches sont marquées comme terminées.');
+                    } catch {
+                        toast.error('Erreur lors de la clôture du projet.');
+                    } finally {
+                        setIsClosing(false);
+                    }
+                }}
+                title="Clôturer le projet"
+                description="Êtes-vous sûr de vouloir clôturer ce projet ? Toutes les tâches seront marquées comme terminées et le projet apparaîtra comme clôturé dans le tableau de bord."
+                confirmLabel="Clôturer"
+                cancelLabel="Annuler"
+                variant="warning"
+            />
+
+            <ConfirmationModal
+                isOpen={showDeleteModal}
+                onClose={() => setShowDeleteModal(false)}
+                onConfirm={async () => {
+                    if (!id) return;
+                    setIsDeleting(true);
+                    try {
+                        await projectService.delete(id);
+                        toast.success('Projet supprimé');
+                        navigate('/projects');
+                    } catch {
+                        toast.error('Impossible de supprimer le projet.');
+                    } finally {
+                        setIsDeleting(false);
+                        setShowDeleteModal(false);
+                    }
+                }}
+                title="Supprimer le projet"
+                description="Êtes-vous sûr de vouloir supprimer ce projet ? Cette action est irréversible. Toutes les tâches et documents associés seront également supprimés."
+                confirmLabel="Supprimer"
+                cancelLabel="Annuler"
+                variant="danger"
+            />
         </div>
     );
 };

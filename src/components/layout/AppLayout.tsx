@@ -2,6 +2,7 @@ import { Outlet, useLocation } from 'react-router-dom';
 import { Bell, Search } from 'lucide-react';
 import { PageTransition } from '@/components/ui/PageTransition';
 import { ThemeToggle } from '@/features/theme/ThemeToggle';
+import { TiliBot } from '@/features/bot/TiliBot';
 import { AnimatedSidebar } from './AnimatedSidebar';
 
 export const AppLayout = () => {
@@ -57,6 +58,8 @@ export const AppLayout = () => {
                     </PageTransition>
                 </div>
             </main>
+
+            <TiliBot />
         </div>
     );
 };

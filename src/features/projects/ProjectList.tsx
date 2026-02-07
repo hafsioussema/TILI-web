@@ -84,8 +84,9 @@ export const ProjectList = () => {
                 />
             </div>
 
-            {showCreateModal && (
+            {showCreateModal && user && (
                 <ProjectCreationModal
+                    user={user}
                     onClose={() => setShowCreateModal(false)}
                     onSuccess={() => {
                         setShowCreateModal(false);
@@ -124,6 +125,10 @@ export const ProjectList = () => {
                                 <ProjectCard
                                     key={project._id}
                                     project={project}
+                                    user={user}
+                                    onDeleted={() => {
+                                        setProjects((prev) => prev.filter((p) => p._id !== project._id));
+                                    }}
                                 />
                             ))}
                         </AnimatePresence>

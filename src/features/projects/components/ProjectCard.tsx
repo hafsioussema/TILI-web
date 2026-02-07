@@ -1,18 +1,54 @@
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Briefcase, Calendar, Users as UsersIcon, MoreHorizontal, Layout, Info } from 'lucide-react';
+import { Briefcase, Calendar, Users as UsersIcon, MoreHorizontal, Layout, Info, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { type Project, ProjectStatus } from '@/types/documents';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { useState } from 'react';
+import { projectService } from '../projectService';
+import { toast } from 'sonner';
+import { UserRole, type User } from '@/types';
+import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
 
 interface ProjectCardProps {
     project: Project;
+    user?: User | null;
+    onDeleted?: () => void;
 }
 
-export const ProjectCard = ({ project }: ProjectCardProps) => {
+export const ProjectCard = ({ project, user, onDeleted }: ProjectCardProps) => {
     const navigate = useNavigate();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
+
+    const managerId = typeof project.managerId === 'object' && project.managerId?._id
+        ? project.managerId._id
+        : project.managerId;
+    const isManager = user?.id && managerId && String(managerId) === String(user.id);
+    const isAdmin = user?.role === UserRole.ADMIN;
+    const canDelete = isAdmin || isManager;
+
+    const handleDeleteClick = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (!canDelete || isDeleting) return;
+        setIsMenuOpen(false);
+        setShowDeleteModal(true);
+    };
+
+    const handleDeleteConfirm = async () => {
+        setIsDeleting(true);
+        try {
+            await projectService.delete(project._id);
+            setShowDeleteModal(false);
+            onDeleted?.();
+        } catch (err) {
+            console.error('Delete project failed', err);
+            toast.error('Impossible de supprimer le projet');
+        } finally {
+            setIsDeleting(false);
+        }
+    };
 
     const formatDate = (dateString?: string) => {
         if (!dateString) return 'Non définie';
@@ -40,6 +76,12 @@ export const ProjectCard = ({ project }: ProjectCardProps) => {
 
     const currentStatus = statusConfig[project.status] || statusConfig[ProjectStatus.ACTIVE];
     const progress = Math.min(100, Math.max(0, Number(project.progress) ?? 0));
+    const membersList = Array.isArray(project.members) ? project.members : [];
+    const hasManager = !!(project.managerId != null && project.managerId !== '');
+    const totalTeamSize = membersList.length + (hasManager ? 1 : 0);
+    const displayMembers = hasManager && typeof project.managerId === 'object' && project.managerId
+        ? [project.managerId, ...membersList]
+        : membersList;
 
     return (
         <motion.div
@@ -78,6 +120,15 @@ export const ProjectCard = ({ project }: ProjectCardProps) => {
                             >
                                 <Info size={12} className="mr-2" /> Paramètres
                             </DropdownMenu.Item>
+                            {canDelete && (
+                                <DropdownMenu.Item
+                                    onClick={handleDeleteClick}
+                                    disabled={isDeleting}
+                                    className="flex items-center px-2 py-1.5 text-xs text-destructive rounded hover:bg-destructive/10 cursor-pointer outline-none transition-colors"
+                                >
+                                    <Trash2 size={12} className="mr-2" /> Supprimer
+                                </DropdownMenu.Item>
+                            )}
                         </DropdownMenu.Content>
                     </DropdownMenu.Portal>
                 </DropdownMenu.Root>
@@ -131,27 +182,38 @@ export const ProjectCard = ({ project }: ProjectCardProps) => {
 
                 <div className="pt-4 border-t border-border/40 flex items-center justify-between">
                     <div className="flex -space-x-2">
-                        {(project.members || []).slice(0, 3).map((member: any, i: number) => (
+                        {displayMembers.slice(0, 3).map((member: any, i: number) => (
                             <div
-                                key={i}
+                                key={typeof member === 'object' && member?._id ? member._id : i}
                                 className="w-7 h-7 rounded-full bg-secondary border-2 border-background flex items-center justify-center text-[9px] font-bold text-muted-foreground shadow-sm overflow-hidden"
-                                title={typeof member === 'string' ? member : `${member.prenom} ${member.nom}`}
+                                title={typeof member === 'string' ? undefined : `${member?.prenom ?? ''} ${member?.nom ?? ''}`.trim() || undefined}
                             >
-                                {typeof member === 'string' ? 'U' : member.prenom?.[0] || 'U'}
+                                {typeof member === 'string' ? 'U' : (member?.prenom?.[0] ?? member?.nom?.[0] ?? 'U')}
                             </div>
                         ))}
-                        {(project.members || []).length > 3 && (
+                        {displayMembers.length > 3 && (
                             <div className="w-7 h-7 rounded-full bg-secondary border-2 border-background flex items-center justify-center text-[8px] font-bold text-muted-foreground">
-                                +{project.members.length - 3}
+                                +{displayMembers.length - 3}
                             </div>
                         )}
                     </div>
-                    <div className="flex items-center gap-1.5 text-[10px] font-medium text-muted-foreground/70">
+                            <div className="flex items-center gap-1.5 text-[10px] font-medium text-muted-foreground/70">
                         <UsersIcon size={12} />
-                        {project.members?.length || 0}
+                        {totalTeamSize}
                     </div>
                 </div>
             </div>
+
+            <ConfirmationModal
+                isOpen={showDeleteModal}
+                onClose={() => setShowDeleteModal(false)}
+                onConfirm={handleDeleteConfirm}
+                title="Supprimer le projet"
+                description={`Êtes-vous sûr de vouloir supprimer le projet "${project.name}" ? Cette action est irréversible.`}
+                confirmLabel="Supprimer"
+                cancelLabel="Annuler"
+                variant="danger"
+            />
         </motion.div>
     );
 };

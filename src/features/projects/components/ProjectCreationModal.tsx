@@ -10,19 +10,21 @@ import { type CreateProjectDto } from '@/types/documents';
 import { cn } from '@/lib/utils';
 
 interface ProjectCreationModalProps {
+    user: { id: string; role: UserRole; nom: string; prenom: string };
     onClose: () => void;
     onSuccess: () => void;
 }
 
-export const ProjectCreationModal = ({ onClose, onSuccess }: ProjectCreationModalProps) => {
+export const ProjectCreationModal = ({ user, onClose, onSuccess }: ProjectCreationModalProps) => {
     const [step, setStep] = useState(1);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [users, setUsers] = useState<User[]>([]);
 
+    const isAdmin = user.role === UserRole.ADMIN;
     const [formData, setFormData] = useState<CreateProjectDto>({
         name: '',
         description: '',
-        managerId: '',
+        managerId: isAdmin ? '' : undefined,
         members: [],
         startDate: new Date().toISOString().split('T')[0],
         endDate: '',
@@ -44,8 +46,12 @@ export const ProjectCreationModal = ({ onClose, onSuccess }: ProjectCreationModa
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!formData.name || !formData.managerId) {
-            toast.error('Veuillez remplir les champs obligatoires');
+        if (!formData.name) {
+            toast.error('Veuillez remplir le nom du projet');
+            return;
+        }
+        if (isAdmin && !formData.managerId) {
+            toast.error('Veuillez sélectionner un chef de projet');
             return;
         }
 
@@ -163,38 +169,43 @@ export const ProjectCreationModal = ({ onClose, onSuccess }: ProjectCreationModa
                                 className="space-y-6"
                             >
                                 <div className="space-y-4">
+                                    {isAdmin ? (
+                                        <>
+                                            <div className="space-y-2">
+                                                <label className="text-sm font-medium text-foreground">Chef de projet *</label>
+                                                <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto pr-2">
+                                                    {managers.map(u => (
+                                                        <button
+                                                            key={u.id}
+                                                            type="button"
+                                                            onClick={() => setFormData({ ...formData, managerId: u.id })}
+                                                            className={cn(
+                                                                "flex items-center gap-3 p-3 rounded-xl border transition-all text-left",
+                                                                formData.managerId === u.id
+                                                                    ? "bg-primary/10 border-primary border-2"
+                                                                    : "bg-secondary/50 border-border hover:border-primary/50"
+                                                            )}
+                                                        >
+                                                            <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold text-primary">
+                                                                {u.nom[0]}{u.prenom[0]}
+                                                            </div>
+                                                            <div className="min-w-0">
+                                                                <p className="text-sm font-semibold truncate leading-tight">{u.nom} {u.prenom}</p>
+                                                                <p className="text-[10px] text-muted-foreground truncate uppercase">{u.role}</p>
+                                                            </div>
+                                                            {formData.managerId === u.id && (
+                                                                <Check className="h-4 w-4 text-primary ml-auto flex-shrink-0" />
+                                                            )}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <p className="text-xs text-muted-foreground">Le projet vous sera assigné comme chef de projet.</p>
+                                    )}
                                     <div className="space-y-2">
-                                        <label className="text-sm font-medium text-foreground">Chef de projet *</label>
-                                        <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto pr-2">
-                                            {managers.map(user => (
-                                                <button
-                                                    key={user.id}
-                                                    type="button"
-                                                    onClick={() => setFormData({ ...formData, managerId: user.id })}
-                                                    className={cn(
-                                                        "flex items-center gap-3 p-3 rounded-xl border transition-all text-left",
-                                                        formData.managerId === user.id
-                                                            ? "bg-primary/10 border-primary border-2"
-                                                            : "bg-secondary/50 border-border hover:border-primary/50"
-                                                    )}
-                                                >
-                                                    <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold text-primary">
-                                                        {user.nom[0]}{user.prenom[0]}
-                                                    </div>
-                                                    <div className="min-w-0">
-                                                        <p className="text-sm font-semibold truncate leading-tight">{user.nom} {user.prenom}</p>
-                                                        <p className="text-[10px] text-muted-foreground truncate uppercase">{user.role}</p>
-                                                    </div>
-                                                    {formData.managerId === user.id && (
-                                                        <Check className="h-4 w-4 text-primary ml-auto flex-shrink-0" />
-                                                    )}
-                                                </button>
-                                            ))}
-                                        </div>
-                                    </div>
-
-                                    <div className="space-y-2">
-                                        <label className="text-sm font-medium text-foreground">Équipe (Consultants)</label>
+                                        <label className="text-sm font-medium text-foreground">Équipe (Membres / Consultants)</label>
                                         <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-2">
                                             {consultants.map(user => {
                                                 const isSelected = formData.members?.includes(user.id);
@@ -268,7 +279,7 @@ export const ProjectCreationModal = ({ onClose, onSuccess }: ProjectCreationModa
                             ) : (
                                 <PremiumButton
                                     type="submit"
-                                    disabled={isSubmitting || !formData.managerId}
+                                    disabled={isSubmitting || (isAdmin && !formData.managerId)}
                                 >
                                     {isSubmitting ? (
                                         <>

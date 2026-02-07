@@ -91,7 +91,7 @@ export interface QueryDocumentsDto {
 export interface CreateProjectDto {
     name: string;
     description?: string;
-    managerId: string;
+    managerId?: string;
     members?: string[];
     startDate?: string;
     endDate?: string;

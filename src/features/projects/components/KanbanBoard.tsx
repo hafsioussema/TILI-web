@@ -1,9 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import { AnimatePresence } from 'framer-motion';
-import { Plus, Calendar, GripVertical } from 'lucide-react';
+import { Plus, Calendar, GripVertical, Trash2 } from 'lucide-react';
 import { AnimatedCard } from '@/components/ui/AnimatedCard';
 import { taskService, TaskStatus, type Task } from '@/features/tasks/taskService';
 import { TaskCreationModal } from '@/features/tasks/components/TaskCreationModal';
+import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
+import { useAuthStore } from '@/features/auth/useAuthStore';
+import { UserRole } from '@/types';
 import { toast } from 'sonner';
 import { DragDropContext, Droppable, Draggable, type DropResult } from '@hello-pangea/dnd';
 
@@ -24,11 +27,14 @@ const COLUMNS: Column[] = [
 ];
 
 export const KanbanBoard = ({ projectId }: KanbanBoardProps) => {
+    const user = useAuthStore((s) => s.user);
+    const canDeleteTask = user?.role === UserRole.ADMIN || user?.role === UserRole.CHEF_PROJET;
     const [tasks, setTasks] = useState<Task[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [modalConfig, setModalConfig] = useState<{ isOpen: boolean; status?: TaskStatus }>({
         isOpen: false
     });
+    const [taskToDelete, setTaskToDelete] = useState<Task | null>(null);
 
     const fetchTasks = useCallback(async () => {
         try {
@@ -53,6 +59,18 @@ export const KanbanBoard = ({ projectId }: KanbanBoardProps) => {
         } catch (error) {
             toast.error('Erreur lors de la mise à jour');
             fetchTasks(); // Revert on error
+        }
+    };
+
+    const handleDeleteTask = async () => {
+        if (!taskToDelete) return;
+        try {
+            await taskService.delete(taskToDelete._id);
+            setTasks(prev => prev.filter(t => t._id !== taskToDelete._id));
+            setTaskToDelete(null);
+        } catch {
+            toast.error('Impossible de supprimer la tâche');
+            setTaskToDelete(null);
         }
     };
 
@@ -105,8 +123,11 @@ export const KanbanBoard = ({ projectId }: KanbanBoardProps) => {
                                 </span>
                             </div>
                             <button
+                                type="button"
                                 onClick={() => setModalConfig({ isOpen: true, status: col.id })}
                                 className="text-muted-foreground hover:text-foreground p-1 rounded hover:bg-secondary transition-colors"
+                                title="Ajouter une tâche"
+                                aria-label="Ajouter une tâche"
                             >
                                 <Plus size={16} />
                             </button>
@@ -144,7 +165,20 @@ export const KanbanBoard = ({ projectId }: KanbanBoardProps) => {
                                                             <span className={`text-[10px] font-semibold px-2 py-1 rounded-md bg-primary/10 text-primary uppercase`}>
                                                                 {task.priority}
                                                             </span>
-                                                            <GripVertical size={14} className="text-muted-foreground/30 group-hover:text-muted-foreground transition-colors" />
+                                                            <div className="flex items-center gap-1">
+                                                                {canDeleteTask && (
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={(e) => { e.stopPropagation(); setTaskToDelete(task); }}
+                                                                        className="p-1 rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                                                                        title="Supprimer la tâche"
+                                                                        aria-label="Supprimer la tâche"
+                                                                    >
+                                                                        <Trash2 size={14} />
+                                                                    </button>
+                                                                )}
+                                                                <GripVertical size={14} className="text-muted-foreground/30 group-hover:text-muted-foreground transition-colors" />
+                                                            </div>
                                                         </div>
 
                                                         <h4 className="text-sm font-medium text-foreground mb-3 leading-snug">{task.title}</h4>
@@ -193,6 +227,16 @@ export const KanbanBoard = ({ projectId }: KanbanBoardProps) => {
                         />
                     )}
                 </AnimatePresence>
+
+                <ConfirmationModal
+                    isOpen={!!taskToDelete}
+                    onClose={() => setTaskToDelete(null)}
+                    onConfirm={handleDeleteTask}
+                    title="Supprimer la tâche"
+                    description={taskToDelete ? `Êtes-vous sûr de vouloir supprimer la tâche "${taskToDelete.title}" ?` : ''}
+                    confirmLabel="Supprimer"
+                    variant="danger"
+                />
             </div>
         </DragDropContext>
     );
