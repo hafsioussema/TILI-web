@@ -6,9 +6,25 @@ import { TiliBot } from '@/features/bot/TiliBot';
 import { AnimatedSidebar } from './AnimatedSidebar';
 import { NotificationPopOver } from '@/features/notifications/components/NotificationPopOver';
 import { AccessibilityPanel } from '@/components/ui/AccessibilityPanel';
+import { NotificationCenter } from '@/components/messages/NotificationCenter';
+import { useMessagesStore } from '@/lib/messagesStore';
+import { useAuthStore } from '@/lib/authStore';
+import { useEffect } from 'react';
 
 export const AppLayout = () => {
     const location = useLocation();
+    const { token } = useAuthStore();
+    const { connect, disconnect } = useMessagesStore();
+
+    // Connecter le WebSocket de messagerie au montage
+    useEffect(() => {
+        if (token) {
+            connect(token);
+        }
+        return () => {
+            disconnect();
+        };
+    }, [token, connect, disconnect]);
 
     // Map paths to readable titles
     const getPageTitle = (pathname: string) => {
@@ -81,6 +97,7 @@ export const AppLayout = () => {
                         </form>
 
                         <AccessibilityPanel />
+                        <NotificationCenter />
                         <ThemeToggle />
                         <NotificationPopOver />
                     </div>
