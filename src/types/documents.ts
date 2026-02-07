@@ -29,7 +29,8 @@ export interface TiliDocument {
   mimeType: string;
   size: number;
   version: number;
-  projectId: string | Project;
+  projectId?: string | Project;
+  meetingId?: string;
   uploadedBy: string | DocumentUser;
   description?: string;
   isDeleted: boolean;
@@ -72,7 +73,8 @@ export interface Project {
 export interface CreateDocumentDto {
   name: string;
   type: DocumentType;
-  projectId: string;
+  projectId?: string;
+  meetingId?: string;
   description?: string;
 }
 

@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FileText, FileSpreadsheet, FileImage, File, Upload, Download, Clock, Search, Eye } from 'lucide-react';
+import { FileText, FileSpreadsheet, FileImage, File, Upload, Download, Clock, Search, Eye, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { AnimatedCard } from '@/components/ui/AnimatedCard';
 import { PremiumButton } from '@/components/ui/PremiumButton';
@@ -49,12 +49,30 @@ export const DocumentsPage = () => {
     const [showUploadModal, setShowUploadModal] = useState(false);
     const [selectedDocForHistory, setSelectedDocForHistory] = useState<TiliDocument | null>(null);
     const [selectedDocForPreview, setSelectedDocForPreview] = useState<TiliDocument | null>(null);
+    const [docToDelete, setDocToDelete] = useState<TiliDocument | null>(null);
+    const [isDeleting, setIsDeleting] = useState(false);
     
     // Set page title
     usePageTitle('Documents');
 
     const canUpload = user?.role === UserRole.ADMIN || user?.role === UserRole.CHEF_PROJET;
+    const canDelete = user?.role === UserRole.ADMIN || user?.role === UserRole.CHEF_PROJET;
     const canViewHistory = user?.role === UserRole.ADMIN || user?.role === UserRole.CHEF_PROJET;
+
+    const handleDelete = async (doc: TiliDocument) => {
+        setIsDeleting(true);
+        try {
+            await documentService.delete(doc._id);
+            toast.success('Document supprimé avec succès');
+            fetchDocuments();
+        } catch (error) {
+            console.error('Delete failed:', error);
+            toast.error('Erreur lors de la suppression');
+        } finally {
+            setIsDeleting(false);
+            setDocToDelete(null);
+        }
+    };
 
     // Fetch documents
     const fetchDocuments = useCallback(async () => {
@@ -283,6 +301,18 @@ export const DocumentsPage = () => {
                                                             <Clock className="h-4 w-4" />
                                                         </button>
                                                     )}
+                                                    {canDelete && (
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setDocToDelete(doc);
+                                                            }}
+                                                            className="p-2 rounded-lg bg-destructive text-destructive-foreground shadow-lg hover:scale-105 transition-transform"
+                                                            title="Supprimer"
+                                                        >
+                                                            <Trash2 className="h-4 w-4" />
+                                                        </button>
+                                                    )}
                                                 </div>
                                             </div>
                                         </AnimatedCard>
@@ -319,6 +349,45 @@ export const DocumentsPage = () => {
                     document={selectedDocForPreview}
                     onClose={() => setSelectedDocForPreview(null)}
                 />
+            )}
+
+            {/* Delete Confirmation Modal */}
+            {docToDelete && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm">
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="bg-card border border-border w-full max-w-md rounded-2xl shadow-2xl p-6"
+                    >
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="p-3 rounded-full bg-destructive/10">
+                                <Trash2 className="h-6 w-6 text-destructive" />
+                            </div>
+                            <h3 className="text-lg font-semibold text-foreground">
+                                Confirmer la suppression
+                            </h3>
+                        </div>
+                        <p className="text-muted-foreground mb-6">
+                            Êtes-vous sûr de vouloir supprimer le document <strong>"{docToDelete.name}"</strong> ? Cette action est irréversible.
+                        </p>
+                        <div className="flex justify-end gap-3">
+                            <button
+                                onClick={() => setDocToDelete(null)}
+                                disabled={isDeleting}
+                                className="px-4 py-2 rounded-lg bg-secondary text-foreground hover:bg-secondary/80 transition-colors"
+                            >
+                                Annuler
+                            </button>
+                            <button
+                                onClick={() => handleDelete(docToDelete)}
+                                disabled={isDeleting}
+                                className="px-4 py-2 rounded-lg bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors disabled:opacity-50"
+                            >
+                                {isDeleting ? 'Suppression...' : 'Supprimer'}
+                            </button>
+                        </div>
+                    </motion.div>
+                </div>
             )}
         </motion.div>
     );
