@@ -27,9 +27,12 @@ export const meetingService = {
         return response.data;
     },
 
-    uploadAudio: async (id: string, file: File, onProgress?: (progress: number) => void): Promise<Meeting> => {
+    uploadAudio: async (id: string, file: File, isLive: boolean = false, onProgress?: (progress: number) => void): Promise<Meeting> => {
         const formData = new FormData();
         formData.append('file', file);
+        if (isLive) {
+            formData.append('isLive', 'true');
+        }
 
         const response = await apiClient.post(`${API_URL}/${id}/upload`, formData, {
             headers: { 'Content-Type': 'multipart/form-data' },
@@ -76,7 +79,7 @@ export const meetingService = {
         await apiClient.delete(`${API_URL}/${id}`);
     },
 
-    updateMeeting: async (id: string, data: { title?: string; date?: string; participants?: string[]; minPresenceDuration?: number }): Promise<Meeting> => {
+    updateMeeting: async (id: string, data: { title?: string; date?: string; participants?: string[]; minPresenceDuration?: number; status?: string; attendance?: string }): Promise<Meeting> => {
         const response = await apiClient.post(`${API_URL}/${id}`, data);
         return response.data;
     },

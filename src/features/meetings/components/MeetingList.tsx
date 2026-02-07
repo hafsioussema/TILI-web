@@ -16,7 +16,9 @@ export const MeetingList: React.FC = () => {
     const loadMeetings = async () => {
         try {
             const data = await meetingService.getAllMeetings();
-            setMeetings(data);
+            // Filter out SCHEDULED meetings - only show recordings/analyses
+            const recordingsOnly = data.filter(m => m.status !== 'SCHEDULED');
+            setMeetings(recordingsOnly);
         } catch (e) {
             console.error(e);
         } finally {
@@ -64,7 +66,7 @@ export const MeetingList: React.FC = () => {
             {meetings.length === 0 && (
                 <div className="col-span-full py-12 text-center text-slate-500 bg-slate-50 rounded-xl border border-dashed border-slate-200">
                     <FileAudio className="w-10 h-10 mx-auto text-slate-300 mb-3" />
-                    <p className="text-sm">No meetings recorded yet.</p>
+                    <p className="text-sm">Aucun enregistrement ou analyse disponible.</p>
                 </div>
             )}
         </div>

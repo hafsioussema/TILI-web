@@ -43,6 +43,11 @@ export const WeeklyCalendar: React.FC = () => {
 
     const getMeetingsForDay = (date: Date): Meeting[] => {
         return meetings.filter(meeting => {
+            // Only show SCHEDULED meetings in the weekly calendar
+            if (meeting.status !== 'SCHEDULED') {
+                return false;
+            }
+
             const meetingDate = new Date(meeting.date);
             return (
                 meetingDate.getDate() === date.getDate() &&
@@ -107,7 +112,7 @@ export const WeeklyCalendar: React.FC = () => {
             </div>
 
             {/* Calendar Grid */}
-            <div className="grid grid-cols-7 divide-x divide-slate-200">
+            <div className="grid grid-cols-1 md:grid-cols-7 divide-y md:divide-y-0 md:divide-x divide-slate-200">
                 {weekDays.map((day, index) => {
                     const dayMeetings = getMeetingsForDay(day);
                     const isToday = day.getTime() === today.getTime();
