@@ -99,4 +99,9 @@ export const meetingService = {
         const response = await apiClient.get(`${API_URL}/${meetingId}/documents`);
         return response.data;
     },
+
+    finalizeWithoutAudio: async (meetingId: string): Promise<Meeting> => {
+        const response = await apiClient.post(`${API_URL}/${meetingId}/finalize`);
+        return response.data;
+    },
 };
