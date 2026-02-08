@@ -266,6 +266,22 @@ export const MeetingDetail: React.FC = () => {
         setEditParticipants(editParticipants.filter(p => p !== email));
     };
 
+    const handleFinalizeWithoutAudio = async () => {
+        if (!meeting) return;
+        if (!confirm('Voulez-vous finaliser cette réunion sans enregistrement audio ? Un résumé AI sera généré avec les informations disponibles.')) {
+            return;
+        }
+        try {
+            toast.info('Finalisation en cours...');
+            await meetingService.finalizeWithoutAudio(meeting.id);
+            toast.success('Réunion finalisée avec succès !');
+            loadMeeting(meeting.id);
+        } catch (error) {
+            console.error('Failed to finalize meeting:', error);
+            toast.error('Échec de la finalisation de la réunion');
+        }
+    };
+
     if (loading) return <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 text-blue-600 animate-spin" /></div>;
 
     if (error) return (
@@ -435,6 +451,15 @@ export const MeetingDetail: React.FC = () => {
 
                             {isOrganizer && (
                                 <>
+                                    {isPast && meeting.status === 'SCHEDULED' && (
+                                        <button
+                                            onClick={handleFinalizeWithoutAudio}
+                                            className="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-xl transition-all flex items-center justify-center gap-2"
+                                        >
+                                            <CheckSquare className="w-4 h-4" />
+                                            Finaliser sans audio
+                                        </button>
+                                    )}
                                     {!isPast && (
                                         <button
                                             onClick={() => setShowEditModal(true)}

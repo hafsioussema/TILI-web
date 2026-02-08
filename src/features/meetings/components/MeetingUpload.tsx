@@ -48,13 +48,24 @@ export const MeetingUpload: React.FC<MeetingUploadProps> = ({ onUploadComplete }
 
             // 2. Upload if file exists
             if (file) {
-                await meetingService.uploadAudio(meeting.id, file, (p) => setProgress(p));
+                try {
+                    await meetingService.uploadAudio(meeting.id, file, (p) => setProgress(p));
+                } catch (uploadError: any) {
+                    console.error('Upload error:', uploadError);
+                    const errorMsg = uploadError?.response?.data?.error?.message || uploadError?.message || 'Erreur inconnue';
+                    
+                    if (errorMsg.includes('no audio track')) {
+                        alert('⚠️ Attention : Aucune piste audio détectée dans le fichier.\n\nLa réunion a été créée, mais elle ne contient pas d\'audio pour la transcription.\n\nVous pouvez télécharger un autre fichier plus tard ou cliquer sur "Finaliser sans audio" depuis les détails de la réunion.');
+                    } else {
+                        alert(`Erreur lors de l'upload: ${errorMsg}`);
+                    }
+                }
             }
 
             if (onUploadComplete) onUploadComplete();
         } catch (error) {
             console.error(error);
-            alert('Failed to create meeting');
+            alert('Erreur lors de la création de la réunion');
         } finally {
             setUploading(false);
             setProgress(0);

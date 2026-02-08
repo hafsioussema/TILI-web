@@ -207,18 +207,18 @@ export const LiveMeeting = () => {
                     setUploadingRecording(true);
                     try {
                         await meetingService.uploadAudio(scheduledMeetingId, file, true);
-                        alert("L'enregistrement a été envoyé avec succès ! L'analyse sera disponible dans les détails de la réunion.");
+                        alert("✅ L'enregistrement a été envoyé avec succès !\n\nL'analyse AI sera disponible dans les détails de la réunion. Si aucune piste audio n'a été détectée, un résumé structuré basé sur les infos de la réunion sera généré.");
                     } catch (e: any) {
                         console.error("Erreur lors de l'envoi de l'enregistrement", e);
                         const errorMsg = e?.response?.data?.error?.message || e?.message || "Erreur inconnue";
 
                         if (errorMsg.includes("no audio track")) {
                             alert(
-                                "❌ Erreur : Aucune piste audio dans l'enregistrement !\n\n" +
+                                "⚠️ Attention : Aucune piste audio dans l'enregistrement !\n\n" +
                                 "Pour le prochain enregistrement :\n" +
                                 "1. Cliquez sur 'Enregistrer & Analyser'\n" +
                                 "2. Dans la fenêtre du navigateur, cochez 'Partager l'audio du système'\n" +
-                                "3. Sélectionnez l'onglet de la réunion"
+                                "3. Sélectionnez l'onglet de la réunion\n\nUn résumé structuré sera quand même généré."
                             );
                         } else {
                             alert(`Erreur lors de l'envoi : ${errorMsg}`);
