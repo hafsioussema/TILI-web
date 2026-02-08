@@ -6,10 +6,11 @@ import { RecentActivity } from './components/RecentActivity';
 import { DocumentTypeStats } from './components/DocumentTypeStats';
 import { useAuthStore } from '@/features/auth/useAuthStore';
 import { format } from 'date-fns';
-import { fr } from 'date-fns/locale';
+import { arSA, enUS, fr } from 'date-fns/locale';
 import { dashboardService, type DashboardStats, type GlobalActivity } from './dashboardService';
 import { projectService } from '@/features/projects/projectService';
 import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
 
 const container = {
     hidden: { opacity: 0 },
@@ -28,6 +29,7 @@ const item = {
 
 export const DashboardAdmin = () => {
     const user = useAuthStore((state) => state.user);
+    const { t, i18n } = useTranslation('common');
     const [stats, setStats] = useState<DashboardStats>();
     const [activities, setActivities] = useState<GlobalActivity[]>([]);
     const [averageProgress, setAverageProgress] = useState<number | undefined>();
@@ -50,11 +52,11 @@ export const DashboardAdmin = () => {
             setAverageProgress(avg);
         } catch (error) {
             console.error('Failed to fetch dashboard data:', error);
-            toast.error('Erreur lors du chargement des données du tableau de bord');
+            toast.error(t('dashboard.adminLoadError'));
         } finally {
             setIsLoading(false);
         }
-    }, []);
+    }, [t]);
 
     useEffect(() => {
         fetchData();
@@ -70,13 +72,19 @@ export const DashboardAdmin = () => {
             <motion.div variants={item} className="flex flex-col md:flex-row md:items-end justify-between gap-4">
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight text-gradient-primary">
-                        Vue d'ensemble Administrateur
+                        {t('dashboard.adminTitle')}
                     </h1>
                     <p className="text-muted-foreground mt-2 text-lg">
-                        Bienvenue, <span className="text-foreground font-medium">{user?.prenom}</span>. Vous avez le contrôle total du système.
+                        {t('dashboard.adminSubtitle', { name: user?.prenom || '' })}
                     </p>
                     <p className="text-sm text-muted-foreground/80 mt-1 capitalize">
-                        {format(new Date(), 'EEEE d MMMM yyyy', { locale: fr })}
+                        {format(new Date(), 'EEEE d MMMM yyyy', {
+                            locale: i18n.resolvedLanguage?.startsWith('fr')
+                                ? fr
+                                : i18n.resolvedLanguage?.startsWith('ar') || i18n.resolvedLanguage?.startsWith('tn')
+                                    ? arSA
+                                    : enUS
+                        })}
                     </p>
                 </div>
             </motion.div>
@@ -85,8 +93,8 @@ export const DashboardAdmin = () => {
                 <StatsCards stats={stats} isLoading={isLoading} averageProgress={averageProgress} />
             </motion.div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div className="lg:col-span-2 space-y-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 lg:gap-8">
+                <div className="md:col-span-2 space-y-4 md:space-y-6 lg:space-y-8">
                     <motion.div variants={item}>
                         <ActiveProjects />
                     </motion.div>
@@ -96,7 +104,7 @@ export const DashboardAdmin = () => {
                     </motion.div>
                 </div>
 
-                <motion.div variants={item} className="lg:col-span-1">
+                <motion.div variants={item} className="md:col-span-2 lg:col-span-1">
                     <RecentActivity activities={activities} isLoading={isLoading} />
                 </motion.div>
             </div>

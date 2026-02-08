@@ -22,7 +22,7 @@ apiClient.interceptors.request.use(
 );
 
 export const meetingService = {
-    createMeeting: async (data: { title: string; date: string; participants: string[]; minPresenceDuration?: number }): Promise<Meeting> => {
+    createMeeting: async (data: { title: string; date: string; participants: string[] }): Promise<Meeting> => {
         const response = await apiClient.post(API_URL, data);
         return response.data;
     },
@@ -79,7 +79,7 @@ export const meetingService = {
         await apiClient.delete(`${API_URL}/${id}`);
     },
 
-    updateMeeting: async (id: string, data: { title?: string; date?: string; participants?: string[]; minPresenceDuration?: number; status?: string; attendance?: string }): Promise<Meeting> => {
+    updateMeeting: async (id: string, data: { title?: string; date?: string; participants?: string[]; status?: string }): Promise<Meeting> => {
         const response = await apiClient.post(`${API_URL}/${id}`, data);
         return response.data;
     },

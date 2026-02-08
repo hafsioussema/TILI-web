@@ -12,13 +12,7 @@ import { DocumentUploadModal } from './components/DocumentUploadModal';
 import { DocumentHistoryModal } from './components/DocumentHistoryModal';
 import { DocumentPreviewModal } from './components/DocumentPreviewModal';
 import { usePageTitle } from '@/lib/hooks/usePageTitle';
-
-const typeLabels: Record<DocumentType, string> = {
-    [DocumentType.RAPPORT]: 'Rapports',
-    [DocumentType.CR_REUNION]: 'Comptes rendus',
-    [DocumentType.ADMINISTRATIF]: 'Administratifs',
-    [DocumentType.PROJET]: 'Projets',
-};
+import { useTranslation } from 'react-i18next';
 
 const typeIcons: Record<DocumentType, React.ComponentType<{ className?: string }>> = {
     [DocumentType.RAPPORT]: FileText,
@@ -42,6 +36,7 @@ const item = {
 
 export const DocumentsPage = () => {
     const { user } = useAuthStore();
+    const { t, i18n } = useTranslation('common');
     const [documents, setDocuments] = useState<TiliDocument[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [activeType, setActiveType] = useState<DocumentType | null>(null);
@@ -51,9 +46,15 @@ export const DocumentsPage = () => {
     const [selectedDocForPreview, setSelectedDocForPreview] = useState<TiliDocument | null>(null);
     const [docToDelete, setDocToDelete] = useState<TiliDocument | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
+    const typeLabels: Record<DocumentType, string> = {
+        [DocumentType.RAPPORT]: t('documents.types.report'),
+        [DocumentType.CR_REUNION]: t('documents.types.minutes'),
+        [DocumentType.ADMINISTRATIF]: t('documents.types.admin'),
+        [DocumentType.PROJET]: t('documents.types.project'),
+    };
     
     // Set page title
-    usePageTitle('Documents');
+    usePageTitle(t('documents.pageTitle'));
 
     const canUpload = user?.role === UserRole.ADMIN || user?.role === UserRole.CHEF_PROJET;
     const canDelete = user?.role === UserRole.ADMIN || user?.role === UserRole.CHEF_PROJET;
@@ -63,11 +64,11 @@ export const DocumentsPage = () => {
         setIsDeleting(true);
         try {
             await documentService.delete(doc._id);
-            toast.success('Document supprimé avec succès');
+            toast.success(t('documents.deleteSuccess'));
             fetchDocuments();
         } catch (error) {
             console.error('Delete failed:', error);
-            toast.error('Erreur lors de la suppression');
+            toast.error(t('documents.deleteError'));
         } finally {
             setIsDeleting(false);
             setDocToDelete(null);
@@ -96,13 +97,13 @@ export const DocumentsPage = () => {
     }, [fetchDocuments]);
 
     const handleDownload = async (doc: TiliDocument) => {
-        const toastId = toast.loading(`Préparation du téléchargement de ${doc.name}...`);
+        const toastId = toast.loading(t('documents.downloadPreparing', { name: doc.name }));
         try {
             await documentService.download(doc._id, doc.name);
-            toast.success('Téléchargement démarré', { id: toastId });
+            toast.success(t('documents.downloadStarted'), { id: toastId });
         } catch (error) {
             console.error('Download failed:', error);
-            toast.error('Erreur lors du téléchargement', { id: toastId });
+            toast.error(t('documents.downloadError'), { id: toastId });
         }
     };
 
@@ -113,7 +114,12 @@ export const DocumentsPage = () => {
     };
 
     const formatDate = (dateString: string): string => {
-        return new Date(dateString).toLocaleDateString('fr-FR', {
+        const locale = i18n.resolvedLanguage?.startsWith('fr')
+            ? 'fr-FR'
+            : i18n.resolvedLanguage?.startsWith('ar') || i18n.resolvedLanguage?.startsWith('tn')
+                ? 'ar-TN'
+                : 'en-US';
+        return new Date(dateString).toLocaleDateString(locale, {
             day: '2-digit',
             month: 'short',
             year: 'numeric',
@@ -131,16 +137,16 @@ export const DocumentsPage = () => {
             <motion.div variants={item} className="flex items-center justify-between">
                 <div>
                     <h1 className="text-2xl font-bold tracking-tight text-foreground">
-                        Documents
+                        {t('documents.title')}
                     </h1>
                     <p className="text-muted-foreground mt-1">
-                        Gérez et consultez tous les documents de vos projets
+                        {t('documents.subtitle')}
                     </p>
                 </div>
                 {canUpload && (
                     <PremiumButton onClick={() => setShowUploadModal(true)}>
                         <Upload className="h-4 w-4 mr-2" />
-                        Ajouter un document
+                        {t('documents.add')}
                     </PremiumButton>
                 )}
             </motion.div>
@@ -152,7 +158,7 @@ export const DocumentsPage = () => {
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <input
                         type="text"
-                        placeholder="Rechercher un document..."
+                        placeholder={t('documents.searchPlaceholder')}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-card border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
@@ -170,7 +176,7 @@ export const DocumentsPage = () => {
                                 : "text-muted-foreground hover:text-foreground hover:bg-secondary"
                         )}
                     >
-                        Tous
+                        {t('documents.all')}
                     </button>
                     {Object.entries(typeLabels).map(([type, label]) => (
                         <button
@@ -192,9 +198,9 @@ export const DocumentsPage = () => {
             {/* Document Grid */}
             <motion.div variants={item}>
                 {isLoading ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                         {[...Array(8)].map((_, i) => (
-                            <div key={i} className="h-48 rounded-xl bg-card animate-pulse" />
+                            <div key={i} className="h-44 sm:h-48 rounded-xl bg-card animate-pulse" />
                         ))}
                     </div>
                 ) : documents.length === 0 ? (
@@ -204,12 +210,12 @@ export const DocumentsPage = () => {
                                 <FileText className="h-8 w-8 text-primary" />
                             </div>
                             <h3 className="text-lg font-semibold text-foreground mb-2">
-                                Aucun document
+                                {t('documents.emptyTitle')}
                             </h3>
                             <p className="text-muted-foreground max-w-sm">
                                 {activeType
-                                    ? `Aucun document de type "${typeLabels[activeType]}" trouvé.`
-                                    : "Commencez par ajouter votre premier document."}
+                                    ? t('documents.emptyType', { type: typeLabels[activeType] })
+                                    : t('documents.emptyDesc')}
                             </p>
                             {canUpload && (
                                 <PremiumButton
@@ -217,13 +223,13 @@ export const DocumentsPage = () => {
                                     onClick={() => setShowUploadModal(true)}
                                 >
                                     <Upload className="h-4 w-4 mr-2" />
-                                    Ajouter un document
+                                    {t('documents.add')}
                                 </PremiumButton>
                             )}
                         </div>
                     </AnimatedCard>
                 ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                         <AnimatePresence mode="popLayout">
                             {documents.map((doc) => {
                                 const TypeIcon = typeIcons[doc.type];
@@ -275,7 +281,7 @@ export const DocumentsPage = () => {
                                                             setSelectedDocForPreview(doc);
                                                         }}
                                                         className="p-2 rounded-lg bg-card border border-border text-foreground shadow-lg hover:scale-105 transition-transform"
-                                                        title="Aperçu"
+                                                        title={t('documents.preview')}
                                                     >
                                                         <Eye className="h-4 w-4" />
                                                     </button>
@@ -285,7 +291,7 @@ export const DocumentsPage = () => {
                                                             handleDownload(doc);
                                                         }}
                                                         className="p-2 rounded-lg bg-primary text-primary-foreground shadow-lg hover:scale-105 transition-transform"
-                                                        title="Télécharger"
+                                                        title={t('documents.download')}
                                                     >
                                                         <Download className="h-4 w-4" />
                                                     </button>
@@ -296,7 +302,7 @@ export const DocumentsPage = () => {
                                                                 setSelectedDocForHistory(doc);
                                                             }}
                                                             className="p-2 rounded-lg bg-card border border-border text-foreground shadow-lg hover:scale-105 transition-transform"
-                                                            title="Historique"
+                                                            title={t('documents.history')}
                                                         >
                                                             <Clock className="h-4 w-4" />
                                                         </button>
@@ -308,7 +314,7 @@ export const DocumentsPage = () => {
                                                                 setDocToDelete(doc);
                                                             }}
                                                             className="p-2 rounded-lg bg-destructive text-destructive-foreground shadow-lg hover:scale-105 transition-transform"
-                                                            title="Supprimer"
+                                                            title={t('documents.delete')}
                                                         >
                                                             <Trash2 className="h-4 w-4" />
                                                         </button>
@@ -364,11 +370,11 @@ export const DocumentsPage = () => {
                                 <Trash2 className="h-6 w-6 text-destructive" />
                             </div>
                             <h3 className="text-lg font-semibold text-foreground">
-                                Confirmer la suppression
+                                {t('documents.deleteConfirmTitle')}
                             </h3>
                         </div>
                         <p className="text-muted-foreground mb-6">
-                            Êtes-vous sûr de vouloir supprimer le document <strong>"{docToDelete.name}"</strong> ? Cette action est irréversible.
+                            {t('documents.deleteConfirmDesc', { name: docToDelete.name })}
                         </p>
                         <div className="flex justify-end gap-3">
                             <button
@@ -376,14 +382,14 @@ export const DocumentsPage = () => {
                                 disabled={isDeleting}
                                 className="px-4 py-2 rounded-lg bg-secondary text-foreground hover:bg-secondary/80 transition-colors"
                             >
-                                Annuler
+                                {t('common.cancel')}
                             </button>
                             <button
                                 onClick={() => handleDelete(docToDelete)}
                                 disabled={isDeleting}
                                 className="px-4 py-2 rounded-lg bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors disabled:opacity-50"
                             >
-                                {isDeleting ? 'Suppression...' : 'Supprimer'}
+                                {isDeleting ? t('documents.deleting') : t('documents.delete')}
                             </button>
                         </div>
                     </motion.div>

@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import { Plus, Briefcase, Search } from "lucide-react";
 import { PremiumButton } from "@/components/ui/PremiumButton";
 import { ProjectCreationModal } from "./components/ProjectCreationModal";
@@ -8,13 +7,14 @@ import { projectService } from "./projectService";
 import { UserRole } from "@/types";
 import { type Project, ProjectStatus } from "@/types/documents";
 import { toast } from "sonner";
-import { ProjectCard } from "./components/ProjectCard";
+import { ProjectTable } from "./components/ProjectTable";
 import { ProjectFilters } from "./components/ProjectFilters";
 import { usePageTitle } from "@/lib/hooks/usePageTitle";
-import { useLoadingAnnouncement } from "@/lib/hooks/useLoadingAnnouncement";
+import { useTranslation } from 'react-i18next';
 
 export const ProjectList = () => {
   const { user } = useAuthStore();
+  const { t } = useTranslation('common');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -24,16 +24,16 @@ export const ProjectList = () => {
   );
 
   // Set page title
-  usePageTitle('Projects');
+  usePageTitle(t('projects.pageTitle'));
   
   // Announce loading state
   useEffect(() => {
     const announcer = document.getElementById('loading-announcer');
     if (announcer) {
       if (isLoading) {
-        announcer.textContent = 'Loading projects...';
+        announcer.textContent = t('projects.loading');
       } else {
-        announcer.textContent = `${projects.length} projects loaded`;
+        announcer.textContent = t('projects.loaded', { count: projects.length });
         setTimeout(() => { announcer.textContent = ''; }, 1000);
       }
     }
@@ -49,13 +49,13 @@ export const ProjectList = () => {
         setProjects(data);
       } catch (error) {
         console.error("Failed to fetch projects:", error);
-        toast.error("Erreur lors du chargement des projets");
+        toast.error(t('projects.loadError'));
       } finally {
         setIsLoading(false);
       }
     };
     fetchProjects();
-  }, []);
+  }, [t]);
 
   const filteredProjects = projects.filter((project) => {
     const matchesSearch =
@@ -75,17 +75,17 @@ export const ProjectList = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-gradient-primary">
-            Projets
+            {t('projects.title')}
           </h1>
           <p className="text-muted-foreground mt-1">
-            Gérez vos missions et suivez l'avancement de vos équipes.
+            {t('projects.subtitle')}
           </p>
         </div>
 
         <div className="flex items-center gap-3">
           {canCreate && (
             <PremiumButton onClick={() => setShowCreateModal(true)}>
-              <Plus className="mr-2 h-4 w-4" /> Nouveau Projet
+              <Plus className="mr-2 h-4 w-4" /> {t('projects.newProject')}
             </PremiumButton>
           )}
         </div>
@@ -95,7 +95,7 @@ export const ProjectList = () => {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div className="relative w-full md:w-96 group">
           <label htmlFor="project-search" className="sr-only">
-            Search projects
+            {t('projects.searchLabel')}
           </label>
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             <Search className="h-4 w-4 text-muted-foreground group-focus-within:text-foreground transition-colors" aria-hidden="true" />
@@ -104,10 +104,10 @@ export const ProjectList = () => {
             id="project-search"
             type="search"
             className="block w-full bg-secondary/50 text-foreground pl-10 pr-3 py-2.5 border border-input rounded-lg focus:outline-none focus:ring-1 focus:ring-ring focus:border-ring transition-all placeholder-muted-foreground text-sm"
-            placeholder="Rechercher un projet..."
+            placeholder={t('projects.searchPlaceholder')}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            aria-label="Search projects by name or description"
+            aria-label={t('projects.searchAria')}
           />
         </div>
 
@@ -130,11 +130,11 @@ export const ProjectList = () => {
 
       <div className="flex-1 min-h-0">
         {isLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {[...Array(8)].map((_, i) => (
+          <div className="space-y-2">
+            {[...Array(5)].map((_, i) => (
               <div
                 key={i}
-                className="h-48 rounded-2xl bg-secondary/50 animate-pulse"
+                className="h-20 rounded-xl bg-secondary/50 animate-pulse"
               />
             ))}
           </div>
@@ -143,43 +143,31 @@ export const ProjectList = () => {
             <div className="h-16 w-16 rounded-full bg-secondary flex items-center justify-center mb-4">
               <Briefcase className="h-8 w-8 text-muted-foreground" />
             </div>
-            <h3 className="text-xl font-semibold mb-2">Aucun projet trouvé</h3>
+            <h3 className="text-xl font-semibold mb-2">{t('projects.emptyTitle')}</h3>
             <p className="text-muted-foreground mb-6">
-              Commencez par créer votre premier projet pour gérer vos tâches.
+              {t('projects.emptyDesc')}
             </p>
             {canCreate && (
               <PremiumButton onClick={() => setShowCreateModal(true)}>
-                Créer un projet
+                {t('projects.createFirst')}
               </PremiumButton>
             )}
           </div>
         ) : (
-          <motion.div
-            layout
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
-          >
-            <AnimatePresence>
-              {filteredProjects.map((project) => (
-                <ProjectCard
-                  key={project._id}
-                  project={project}
-                  user={user}
-                  onDeleted={() => {
-                    setProjects((prev) =>
-                      prev.filter((p) => p._id !== project._id),
-                    );
-                  }}
-                  onUpdated={(updatedProject) => {
-                    setProjects((prev) =>
-                      prev.map((p) =>
-                        p._id === updatedProject._id ? updatedProject : p,
-                      ),
-                    );
-                  }}
-                />
-              ))}
-            </AnimatePresence>
-          </motion.div>
+          <ProjectTable
+            projects={filteredProjects}
+            user={user}
+            onDeleted={(projectId) => {
+              setProjects((prev) => prev.filter((p) => p._id !== projectId));
+            }}
+            onUpdated={(updatedProject) => {
+              setProjects((prev) =>
+                prev.map((p) =>
+                  p._id === updatedProject._id ? updatedProject : p,
+                ),
+              );
+            }}
+          />
         )}
       </div>
     </div>

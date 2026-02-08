@@ -106,55 +106,55 @@ export const ProjectCreationModal = ({ user, onClose, onSuccess }: ProjectCreati
                                 initial={{ opacity: 0, x: 20 }}
                                 animate={{ opacity: 1, x: 0 }}
                                 exit={{ opacity: 0, x: -20 }}
-                                className="space-y-4"
+                                className="space-y-5"
                             >
-                                <div className="grid grid-cols-1 gap-4">
-                                    <div className="space-y-2">
-                                        <label className="text-sm font-medium text-foreground">Nom du projet *</label>
+                                <div className="grid grid-cols-1 gap-5">
+                                    <div className="space-y-3">
+                                        <label className="text-sm font-semibold text-foreground ml-0.5">Nom du projet *</label>
                                         <input
                                             type="text"
                                             autoFocus
                                             required
                                             value={formData.name}
                                             onChange={e => setFormData({ ...formData, name: e.target.value })}
-                                            className="w-full px-4 py-2.5 rounded-xl bg-secondary/50 border border-border focus:ring-2 focus:ring-primary/50 outline-none transition-all"
+                                            className="w-full px-4 py-3 rounded-xl bg-card border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 hover:border-border/80 transition-all"
                                             placeholder="Ex: Refonte Plateforme Inclusion"
                                         />
                                     </div>
 
-                                    <div className="space-y-2">
-                                        <label className="text-sm font-medium text-foreground">Description</label>
+                                    <div className="space-y-3">
+                                        <label className="text-sm font-semibold text-foreground ml-0.5">Description</label>
                                         <textarea
                                             rows={3}
                                             value={formData.description}
                                             onChange={e => setFormData({ ...formData, description: e.target.value })}
-                                            className="w-full px-4 py-2.5 rounded-xl bg-secondary/50 border border-border focus:ring-2 focus:ring-primary/50 outline-none transition-all resize-none"
+                                            className="w-full px-4 py-3 rounded-xl bg-card border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 hover:border-border/80 transition-all resize-none"
                                             placeholder="Décrivez les objectifs du projet..."
                                         />
                                     </div>
 
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className="space-y-2">
-                                            <label className="text-sm font-medium text-foreground">Date de début</label>
+                                    <div className="grid grid-cols-2 gap-5">
+                                        <div className="space-y-3">
+                                            <label className="text-sm font-semibold text-foreground ml-0.5">Date de début</label>
                                             <div className="relative">
-                                                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
                                                 <input
                                                     type="date"
                                                     value={formData.startDate}
                                                     onChange={e => setFormData({ ...formData, startDate: e.target.value })}
-                                                    className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-secondary/50 border border-border focus:ring-2 focus:ring-primary/50 outline-none transition-all"
+                                                    className="w-full pl-10 pr-4 py-3 rounded-xl bg-card border border-border text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 hover:border-border/80 transition-all"
                                                 />
                                             </div>
                                         </div>
-                                        <div className="space-y-2">
-                                            <label className="text-sm font-medium text-foreground">Date de fin prévue</label>
+                                        <div className="space-y-3">
+                                            <label className="text-sm font-semibold text-foreground ml-0.5">Date de fin prévue</label>
                                             <div className="relative">
-                                                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
                                                 <input
                                                     type="date"
                                                     value={formData.endDate}
                                                     onChange={e => setFormData({ ...formData, endDate: e.target.value })}
-                                                    className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-secondary/50 border border-border focus:ring-2 focus:ring-primary/50 outline-none transition-all"
+                                                    className="w-full pl-10 pr-4 py-3 rounded-xl bg-card border border-border text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 hover:border-border/80 transition-all"
                                                 />
                                             </div>
                                         </div>
@@ -169,11 +169,11 @@ export const ProjectCreationModal = ({ user, onClose, onSuccess }: ProjectCreati
                                 exit={{ opacity: 0, x: -20 }}
                                 className="space-y-6"
                             >
-                                <div className="space-y-4">
+                                <div className="space-y-5">
                                     {isAdmin ? (
                                         <>
-                                            <div className="space-y-2">
-                                                <label className="text-sm font-medium text-foreground">Chef de projet *</label>
+                                            <div className="space-y-3">
+                                                <label className="text-sm font-semibold text-foreground ml-0.5">Chef de projet *</label>
                                                 <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto pr-2">
                                                     {managers.map(u => (
                                                         <button
@@ -181,10 +181,10 @@ export const ProjectCreationModal = ({ user, onClose, onSuccess }: ProjectCreati
                                                             type="button"
                                                             onClick={() => setFormData({ ...formData, managerId: u.id })}
                                                             className={cn(
-                                                                "flex items-center gap-3 p-3 rounded-xl border transition-all text-left",
-                                                                formData.managerId === u.id
-                                                                    ? "bg-primary/10 border-primary border-2"
-                                                                    : "bg-secondary/50 border-border hover:border-primary/50"
+                                                            "flex items-center gap-3 p-3 rounded-lg border-2 transition-all text-left font-medium",
+                                                            formData.managerId === u.id
+                                                                ? "bg-primary/10 border-primary shadow-sm"
+                                                                : "bg-card border-border hover:border-primary/50 hover:bg-secondary/30"
                                                             )}
                                                         >
                                                             <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold text-primary">
@@ -205,8 +205,8 @@ export const ProjectCreationModal = ({ user, onClose, onSuccess }: ProjectCreati
                                     ) : (
                                         <p className="text-xs text-muted-foreground">Le projet vous sera assigné comme chef de projet.</p>
                                     )}
-                                    <div className="space-y-2">
-                                        <label className="text-sm font-medium text-foreground">Équipe (Membres / Consultants)</label>
+                                    <div className="space-y-3">
+                                        <label className="text-sm font-semibold text-foreground ml-0.5">Équipe (Membres / Consultants)</label>
                                         <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-2">
                                             {consultants.map(user => {
                                                 const isSelected = formData.members?.includes(user.id);
@@ -221,10 +221,10 @@ export const ProjectCreationModal = ({ user, onClose, onSuccess }: ProjectCreati
                                                             setFormData({ ...formData, members });
                                                         }}
                                                         className={cn(
-                                                            "flex items-center gap-3 p-3 rounded-xl border transition-all text-left",
+                                                            "flex items-center gap-3 p-3 rounded-lg border-2 transition-all text-left font-medium",
                                                             isSelected
-                                                                ? "bg-primary/10 border-primary border-2"
-                                                                : "bg-secondary/50 border-border hover:border-primary/50"
+                                                                ? "bg-primary/10 border-primary shadow-sm"
+                                                                : "bg-card border-border hover:border-primary/50 hover:bg-secondary/30"
                                                         )}
                                                     >
                                                         <div className="h-8 w-8 rounded-full bg-secondary flex items-center justify-center text-xs font-bold text-muted-foreground">

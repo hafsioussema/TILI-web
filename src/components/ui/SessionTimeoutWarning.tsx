@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Clock, AlertTriangle } from 'lucide-react';
 import { useAuthStore } from '@/features/auth/useAuthStore';
+import { useTranslation } from 'react-i18next';
 
 // Warning shows 2 minutes before timeout
 const WARNING_TIME = 2 * 60 * 1000; // 2 minutes in milliseconds
@@ -9,6 +10,7 @@ const SESSION_TIMEOUT = 30 * 60 * 1000; // 30 minutes in milliseconds
 
 export const SessionTimeoutWarning = () => {
     const { token, checkAuth } = useAuthStore();
+    const { t } = useTranslation('common');
     const [showWarning, setShowWarning] = useState(false);
     const [timeLeft, setTimeLeft] = useState(0);
     const [lastActivity, setLastActivity] = useState(Date.now());
@@ -99,7 +101,7 @@ export const SessionTimeoutWarning = () => {
                                 id="session-timeout-title" 
                                 className="text-lg font-semibold text-foreground mb-1"
                             >
-                                Session Expiring Soon
+                                {t('components.sessionTimeout.title')}
                             </h2>
                             <p 
                                 id="session-timeout-description" 
@@ -114,7 +116,7 @@ export const SessionTimeoutWarning = () => {
                                     aria-label="Extend session and stay logged in"
                                 >
                                     <Clock className="inline h-4 w-4 mr-2" aria-hidden="true" />
-                                    Stay Logged In
+                                    {t('components.sessionTimeout.extendButton')}
                                 </button>
                             </div>
                         </div>

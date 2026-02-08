@@ -205,7 +205,7 @@ export const ProjectMembersManager = ({
                 {currentMembers.map((member) => (
                   <div
                     key={member._id}
-                    className="flex items-center gap-3 p-3 bg-secondary/30 rounded-lg"
+                    className="flex items-center gap-3 p-3 bg-secondary/30 rounded-xl"
                   >
                     <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary">
                       {member.prenom[0]}
@@ -324,7 +324,7 @@ export const ProjectMembersManager = ({
 
               {/* Changement de Chef (Admin uniquement) */}
               {canChangeManager && (
-                <div className="space-y-2">
+                <div className="space-y-3">
                   <label className="text-xs text-muted-foreground">
                     Nouveau chef de projet
                   </label>
@@ -334,7 +334,7 @@ export const ProjectMembersManager = ({
                     </div>
                   ) : (
                     <select
-                      className="w-full bg-background border-border/50 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary/20 border text-sm"
+                      className="w-full bg-card border border-border rounded-xl px-4 py-3 text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 hover:border-border/80 transition-all"
                       value={selectedManagerId}
                       onChange={(e) => setSelectedManagerId(e.target.value)}
                     >
@@ -388,7 +388,7 @@ export const ProjectMembersManager = ({
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
                       exit={{ opacity: 0, x: -20 }}
-                      className="flex items-center justify-between p-3 bg-background rounded-lg group hover:bg-secondary/30 transition-colors"
+                      className="flex items-center justify-between p-3 bg-background rounded-xl group hover:bg-secondary/30 transition-colors"
                     >
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-sm font-bold text-primary">
@@ -410,7 +410,7 @@ export const ProjectMembersManager = ({
                       <button
                         type="button"
                         onClick={() => removeMember(member.id)}
-                        className="opacity-0 group-hover:opacity-100 p-2 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all"
+                        className="opacity-0 group-hover:opacity-100 p-2 rounded-xl text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all"
                         title="Retirer du projet"
                       >
                         <UserMinus size={16} />
@@ -459,7 +459,7 @@ export const ProjectMembersManager = ({
                   <input
                     type="text"
                     placeholder="Rechercher un utilisateur..."
-                    className="w-full bg-secondary/30 border-border/50 rounded-lg px-10 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 border"
+                    className="w-full bg-card border border-border rounded-xl px-10 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 hover:border-border/80 transition-all"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                   />
@@ -486,7 +486,7 @@ export const ProjectMembersManager = ({
                           layout
                           initial={{ opacity: 0 }}
                           animate={{ opacity: 1 }}
-                          className="flex items-center justify-between p-3 hover:bg-secondary/50 rounded-lg transition-colors cursor-pointer group"
+                          className="flex items-center justify-between p-3 hover:bg-secondary/50 rounded-xl transition-colors cursor-pointer group"
                           onClick={() => toggleMember(u.id)}
                         >
                           <div className="flex items-center gap-3">
@@ -525,10 +525,10 @@ export const ProjectMembersManager = ({
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 10 }}
-                className="p-4 bg-blue-500/5 border border-blue-500/20 rounded-xl"
+                className="p-4 bg-primary/5 border border-primary/20 rounded-xl"
               >
                 <h4 className="text-sm font-medium text-foreground mb-3 flex items-center gap-2">
-                  <Check className="h-4 w-4 text-blue-500" />
+                  <Check className="h-4 w-4 text-primary" />
                   Modifications en attente
                 </h4>
                 <div className="space-y-2 text-xs">

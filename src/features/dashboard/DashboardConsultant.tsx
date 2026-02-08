@@ -5,10 +5,11 @@ import { ActiveProjects } from './components/ActiveProjects';
 import { RecentActivity } from './components/RecentActivity';
 import { useAuthStore } from '@/features/auth/useAuthStore';
 import { format } from 'date-fns';
-import { fr } from 'date-fns/locale';
+import { arSA, enUS, fr } from 'date-fns/locale';
 import { dashboardService, type DashboardStats, type GlobalActivity } from './dashboardService';
 import { projectService } from '@/features/projects/projectService';
 import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
 
 const container = {
     hidden: { opacity: 0 },
@@ -27,6 +28,7 @@ const item = {
 
 export const DashboardConsultant = () => {
     const { user } = useAuthStore();
+    const { t, i18n } = useTranslation('common');
     const [stats, setStats] = useState<DashboardStats>();
     const [activities, setActivities] = useState<GlobalActivity[]>([]);
     const [averageProgress, setAverageProgress] = useState<number | undefined>();
@@ -49,11 +51,11 @@ export const DashboardConsultant = () => {
             setAverageProgress(avg);
         } catch (error) {
             console.error('Failed to fetch dashboard data:', error);
-            toast.error('Erreur lors du chargement des données');
+            toast.error(t('dashboard.consultantLoadError'));
         } finally {
             setIsLoading(false);
         }
-    }, []);
+    }, [t]);
 
     useEffect(() => {
         fetchData();
@@ -68,13 +70,19 @@ export const DashboardConsultant = () => {
         >
             <motion.div variants={item}>
                 <h1 className="text-3xl font-bold tracking-tight text-gradient-primary">
-                    Mon Espace Consultant
+                    {t('dashboard.consultantTitle')}
                 </h1>
                 <p className="text-muted-foreground mt-2 text-lg">
-                    Bonjour <span className="text-foreground font-medium">{user?.prenom}</span>. Voici les activités récentes sur vos projets d'affectation.
+                    {t('dashboard.consultantSubtitle', { name: user?.prenom || '' })}
                 </p>
                 <p className="text-sm text-muted-foreground/80 mt-1 capitalize">
-                    {format(new Date(), 'EEEE d MMMM yyyy', { locale: fr })}
+                    {format(new Date(), 'EEEE d MMMM yyyy', {
+                        locale: i18n.resolvedLanguage?.startsWith('fr')
+                            ? fr
+                            : i18n.resolvedLanguage?.startsWith('ar') || i18n.resolvedLanguage?.startsWith('tn')
+                                ? arSA
+                                : enUS
+                    })}
                 </p>
             </motion.div>
 
@@ -82,11 +90,11 @@ export const DashboardConsultant = () => {
                 <StatsCards stats={stats} isLoading={isLoading} averageProgress={averageProgress} />
             </motion.div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <motion.div variants={item} className="lg:col-span-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 lg:gap-8">
+                <motion.div variants={item} className="md:col-span-2 lg:col-span-2">
                     <ActiveProjects />
                 </motion.div>
-                <motion.div variants={item} className="lg:col-span-1">
+                <motion.div variants={item} className="md:col-span-2 lg:col-span-1">
                     <RecentActivity activities={activities} isLoading={isLoading} />
                 </motion.div>
             </div>

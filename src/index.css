@@ -1,4 +1,5 @@
 @import url("https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Source+Sans+3:wght@400;600;700&display=swap");
+@import url("https://cdn.jsdelivr.net/npm/opendyslexic@1.0.3/fonts.css");
 @import "tailwindcss";
 
 @layer base {
@@ -221,6 +222,73 @@
   textarea {
     font-size: 1rem;
     line-height: 1.5;
+  }
+
+  /* Select and Option styling for dark mode */
+  select {
+    @apply text-foreground;
+    color-scheme: light dark;
+  }
+
+  .dark select {
+    @apply text-foreground;
+    color-scheme: dark;
+    background-color: hsl(var(--card));
+  }
+
+  select option {
+    @apply text-foreground;
+    background-color: hsl(var(--card));
+    color: hsl(var(--foreground));
+  }
+
+  .dark select option {
+    background-color: hsl(var(--secondary));
+    color: hsl(var(--foreground));
+  }
+
+  /* Checkbox styling */
+  input[type="checkbox"],
+  input[type="radio"] {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    display: inline-block;
+    vertical-align: middle;
+    width: 1.25rem;
+    height: 1.25rem;
+    border: 2px solid hsl(var(--border));
+    border-radius: 0.375rem;
+    background-color: hsl(var(--background));
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+  }
+
+  input[type="checkbox"]:hover,
+  input[type="radio"]:hover {
+    border-color: hsl(var(--primary));
+  }
+
+  input[type="checkbox"]:checked,
+  input[type="radio"]:checked {
+    background-color: hsl(var(--primary));
+    border-color: hsl(var(--primary));
+    background-image: url("data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M12.207 4.793a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0l-2-2a1 1 0 011.414-1.414L6.5 9.086l4.293-4.293a1 1 0 011.414 0z'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 1rem 1rem;
+  }
+
+  input[type="checkbox"]:focus-visible,
+  input[type="radio"]:focus-visible {
+    outline: 3px solid hsl(var(--ring));
+    outline-offset: 2px;
+  }
+
+  input[type="checkbox"]:disabled,
+  input[type="radio"]:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
 
   /* Skip to main content link */
@@ -447,6 +515,99 @@ html.a11y-spacing body {
 html.a11y-spacing .content-shell {
   padding-top: 2.5rem;
   padding-bottom: 2.5rem;
+}
+
+/* Color blindness filters (WCAG 2.1 compliant) */
+html.a11y-protanopia body {
+  filter: url(#protanopia);
+}
+
+html.a11y-deuteranopia body {
+  filter: url(#deuteranopia);
+}
+
+html.a11y-tritanopia body {
+  filter: url(#tritanopia);
+}
+
+html.a11y-achromatopsia body {
+  filter: url(#achromatopsia);
+}
+
+/* Dyslexia-friendly fonts */
+html.a11y-dyslexia-opendyslexic,
+html.a11y-dyslexia-opendyslexic * {
+  font-family: 'OpenDyslexic', Arial, sans-serif !important;
+}
+
+html.a11y-dyslexia-arial,
+html.a11y-dyslexia-arial * {
+  font-family: Arial, Helvetica, sans-serif !important;
+}
+
+html.a11y-dyslexia-comicsans,
+html.a11y-dyslexia-comicsans * {
+  font-family: 'Comic Sans MS', 'Comic Sans', cursive !important;
+}
+
+html.a11y-dyslexia-verdana,
+html.a11y-dyslexia-verdana * {
+  font-family: Verdana, Geneva, sans-serif !important;
+}
+
+/* Dyslexia background colors */
+html.a11y-dyslexia-bg-cream {
+  --background: 44 16% 96%; /* #FAFAF0 */
+  --card: 44 16% 96%;
+  --popover: 44 16% 96%;
+}
+
+html.a11y-dyslexia-bg-lightblue {
+  --background: 195 52% 95%; /* #E8F4F8 */
+  --card: 195 52% 95%;
+  --popover: 195 52% 95%;
+}
+
+html.a11y-dyslexia-bg-lightgray {
+  --background: 0 0% 96%; /* #F5F5F5 */
+  --card: 0 0% 96%;
+  --popover: 0 0% 96%;
+}
+
+/* Dyslexia enhanced spacing */
+html.a11y-dyslexia-spacing body {
+  letter-spacing: 0.12em;
+  word-spacing: 0.16em;
+  line-height: 1.8;
+}
+
+html.a11y-dyslexia-spacing p,
+html.a11y-dyslexia-spacing li,
+html.a11y-dyslexia-spacing div {
+  letter-spacing: 0.12em;
+  word-spacing: 0.16em;
+}
+
+/* Dyslexia line width limit */
+html.a11y-dyslexia-linewidth p,
+html.a11y-dyslexia-linewidth li,
+html.a11y-dyslexia-linewidth div {
+  max-width: 70ch;
+}
+
+html.a11y-dyslexia-linewidth .content-shell {
+  max-width: 70ch;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Dyslexia disable italics */
+html.a11y-dyslexia-no-italics em,
+html.a11y-dyslexia-no-italics i,
+html.a11y-dyslexia-no-italics .italic {
+  font-style: normal !important;
+  font-weight: 600 !important;
+  color: hsl(var(--primary)) !important;
 }
 
 /* Sonner toast readability */

@@ -1,20 +1,23 @@
 import { Outlet, useLocation } from 'react-router-dom';
-import { Search } from 'lucide-react';
 import { PageTransition } from '@/components/ui/PageTransition';
 import { ThemeToggle } from '@/features/theme/ThemeToggle';
 import { TiliBot } from '@/features/bot/TiliBot';
 import { AnimatedSidebar } from './AnimatedSidebar';
-import { NotificationPopOver } from '@/features/notifications/components/NotificationPopOver';
 import { AccessibilityPanel } from '@/components/ui/AccessibilityPanel';
 import { NotificationCenter } from '@/components/messages/NotificationCenter';
 import { useMessagesStore } from '@/lib/messagesStore';
 import { useAuthStore } from '@/lib/authStore';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { TTSControls } from '@/features/tts/components/TTSControls';
+import { useTranslation } from 'react-i18next';
+import { Menu, X } from 'lucide-react';
 
 export const AppLayout = () => {
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const location = useLocation();
     const { token } = useAuthStore();
     const { connect, disconnect } = useMessagesStore();
+    const { t } = useTranslation('common');
 
     // Connecter le WebSocket de messagerie au montage
     useEffect(() => {
@@ -28,19 +31,19 @@ export const AppLayout = () => {
 
     // Map paths to readable titles
     const getPageTitle = (pathname: string) => {
-        if (pathname === '/') return 'Overview';
-        if (pathname === '/projects') return 'Projects';
-        if (pathname === '/documents') return 'Documents';
-        if (pathname === '/meetings') return 'Meetings';
-        if (pathname === '/users') return 'Team Members';
-        return 'Dashboard';
+        if (pathname === '/') return t('layout.pageTitle.overview');
+        if (pathname === '/projects') return t('layout.pageTitle.projects');
+        if (pathname === '/documents') return t('layout.pageTitle.documents');
+        if (pathname === '/meetings') return t('layout.pageTitle.meetings');
+        if (pathname === '/users') return t('layout.pageTitle.teamMembers');
+        return t('layout.pageTitle.dashboard');
     };
 
     return (
         <div className="flex h-screen bg-background overflow-hidden relative text-foreground font-sans">
             {/* Skip Navigation Link */}
             <a href="#main-content" className="skip-link">
-                Skip to main content
+                {t('layout.skipToMain')}
             </a>
 
             {/* Route Announcer for Screen Readers */}
@@ -52,65 +55,69 @@ export const AppLayout = () => {
                 aria-atomic="true"
             />
 
-            <AnimatedSidebar />
+            {/* Mobile Menu Overlay */}
+            {mobileMenuOpen && (
+                <div 
+                    className="fixed inset-0 bg-black/50 z-40 md:hidden"
+                    onClick={() => setMobileMenuOpen(false)}
+                    role="presentation"
+                />
+            )}
+
+            {/* Desktop Sidebar - Always Visible, Arrow Collapses */}
+            <div className="hidden md:flex flex-col">
+                <AnimatedSidebar />
+            </div>
+
+            {/* Mobile Sidebar - Hidden Until Hamburger Clicked */}
+            {mobileMenuOpen && (
+                <div className="fixed top-0 left-0 h-screen z-50 md:hidden">
+                    <AnimatedSidebar onMobileClose={() => setMobileMenuOpen(false)} isMobileOpen={mobileMenuOpen} />
+                </div>
+            )}
 
             {/* Main Content */}
-            <main className="flex-1 overflow-auto relative z-10 flex flex-col">
+            <main className="flex-1 overflow-auto relative z-10 flex flex-col w-full">
                 <header
-                    className="h-20 border-b border-border/70 flex items-center justify-between px-8 bg-card/80 backdrop-blur-md sticky top-0 z-30"
+                    className="border-b border-border/70 bg-card/80 backdrop-blur-md sticky top-0 z-30 px-3 sm:px-4 md:px-8"
                     role="banner"
                 >
-                    <div className="flex items-center gap-3 text-muted-foreground">
-                        <span className="text-xs uppercase tracking-wider font-semibold">Workspace</span>
-                        <span className="text-muted-foreground/50" aria-hidden="true">/</span>
-                        <span className="text-base text-foreground font-semibold">
-                            {getPageTitle(location.pathname)}
-                        </span>
-                    </div>
-
-                    <div className="flex items-center gap-3">
-                        <form
-                            role="search"
-                            aria-label="Site search"
-                            className="hidden md:flex items-center h-10 px-3 rounded-lg bg-background border border-input text-muted-foreground text-sm w-72 hover:border-ring/40 transition-colors group focus-within:border-ring focus-within:ring-2 focus-within:ring-ring/20"
-                            onSubmit={(e) => e.preventDefault()}
+                    <div className="max-w-7xl mx-auto h-16 sm:h-20 flex items-center justify-between">
+                        {/* Mobile Menu Button */}
+                        <button
+                            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                            className="md:hidden p-2 rounded-lg hover:bg-secondary transition-colors text-muted-foreground hover:text-foreground"
+                            aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
+                            aria-expanded={mobileMenuOpen}
                         >
-                            <Search size={16} className="mr-2 group-focus-within:text-primary transition-colors" aria-hidden="true" />
-                            <label htmlFor="global-search" className="sr-only">
-                                Search workspace
-                            </label>
-                            <input
-                                id="global-search"
-                                type="search"
-                                className="bg-transparent border-none outline-none w-full placeholder:text-muted-foreground/70"
-                                placeholder="Search..."
-                                aria-label="Search workspace"
-                                aria-describedby="search-shortcut"
-                            />
-                            <span
-                                id="search-shortcut"
-                                className="ml-auto text-[10px] bg-background/80 px-1.5 py-0.5 rounded text-muted-foreground border border-border font-mono"
-                                aria-label="Keyboard shortcut: Command K or Control K"
-                            >
-                                ⌘K
-                            </span>
-                        </form>
+                            {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+                        </button>
 
-                        <AccessibilityPanel />
-                        <NotificationCenter />
-                        <ThemeToggle />
-                        <NotificationPopOver />
+                        <div className="flex-1 flex items-center gap-2 md:gap-3 text-muted-foreground ml-2 md:ml-0 min-w-0">
+                            <span className="text-xs uppercase tracking-wider font-semibold hidden sm:inline">{t('layout.workspace')}</span>
+                            <span className="text-muted-foreground/50 hidden sm:inline" aria-hidden="true">/</span>
+                            <span className="text-sm sm:text-base text-foreground font-semibold truncate">
+                                {getPageTitle(location.pathname)}
+                            </span>
+                        </div>
+
+                        <div className="flex items-center gap-2 sm:gap-3 ml-auto">
+                            <AccessibilityPanel />
+                            <NotificationCenter />
+                            <ThemeToggle />
+                        </div>
                     </div>
                 </header>
 
-                <div id="main-content" className="flex-1 p-6 md:p-8 content-shell" role="main">
-                    <PageTransition className="max-w-7xl mx-auto w-full space-y-8">
+                <div id="main-content" className="flex-1 p-3 sm:p-4 md:p-6 lg:p-8 content-shell overflow-x-hidden" role="main">
+                    <PageTransition className="max-w-7xl mx-auto w-full space-y-6 sm:space-y-8">
                         <Outlet />
                     </PageTransition>
                 </div>
             </main>
 
             <TiliBot />
+            <TTSControls />
         </div>
     );
 };

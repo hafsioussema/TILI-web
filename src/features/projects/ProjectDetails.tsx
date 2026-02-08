@@ -3,14 +3,12 @@ import { useParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { KanbanBoard } from "./components/KanbanBoard";
 import {
-  ArrowLeft,
   Calendar,
   Users as UsersIcon,
   Layout,
   CheckCircle2,
   Trash2,
   Edit3,
-  MessageCircle,
 } from "lucide-react";
 import { PremiumButton } from "@/components/ui/PremiumButton";
 import { AnimatedCard } from "@/components/ui/AnimatedCard";
@@ -27,7 +25,7 @@ import { toast } from "sonner";
 import { usePageTitle } from "@/lib/hooks/usePageTitle";
 import { Breadcrumbs } from "@/components/ui/Breadcrumbs";
 import { ProjectChatPanel, ChatButton } from "@/components/messages";
-import { useMessagesStore } from "@/lib/messagesStore";
+import { useTranslation } from 'react-i18next';
 
 export const ProjectDetails = () => {
   const { id } = useParams<{ id: string }>();
@@ -44,8 +42,7 @@ export const ProjectDetails = () => {
   const [showMembersModal, setShowMembersModal] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-  
-  const { isChatPanelOpen } = useMessagesStore();
+  const { t } = useTranslation('common');
 
   const managerId =
     typeof project?.managerId === "object" && project?.managerId?._id
@@ -70,22 +67,26 @@ export const ProjectDetails = () => {
         setProject(data);
       } catch (error) {
         console.error("Failed to fetch project:", error);
-        toast.error("Erreur lors du chargement du projet");
+        toast.error(t('projects.detailsLoadError'));
         navigate("/projects");
       } finally {
         setIsLoading(false);
       }
     };
     fetchProject();
-  }, [id, navigate]);
+  }, [id, navigate, t]);
 
   // Set page title
-  usePageTitle(project ? `${project.name} - Project` : 'Project Details');
+  usePageTitle(
+    project
+      ? t('projects.detailsTitle', { name: project.name })
+      : t('projects.detailsFallback')
+  );
 
   const breadcrumbItems = project
     ? [
-        { label: "Accueil", href: "/" },
-        { label: "Projets", href: "/projects" },
+        { label: t('breadcrumbs.home'), href: "/" },
+        { label: t('breadcrumbs.projects'), href: "/projects" },
         { label: project.name },
       ]
     : [];
@@ -102,15 +103,8 @@ export const ProjectDetails = () => {
 
   return (
     <div className="space-y-6 h-full flex flex-col pb-6">
-      <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-4">
         <Breadcrumbs items={breadcrumbItems} />
-        <button
-          onClick={() => navigate("/projects")}
-          className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors w-fit"
-        >
-          <ArrowLeft size={16} />
-          Retour aux projets
-        </button>
 
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
@@ -134,7 +128,7 @@ export const ProjectDetails = () => {
                 variant="outline"
                 onClick={() => setShowEditModal(true)}
               >
-                <Edit3 className="mr-2 h-4 w-4" /> Modifier
+                <Edit3 className="mr-2 h-4 w-4" /> {t('projects.edit')}
               </PremiumButton>
             )}
             {canCloseProject && (
@@ -143,7 +137,7 @@ export const ProjectDetails = () => {
                 onClick={() => setShowCloseModal(true)}
                 disabled={isClosing}
               >
-                <CheckCircle2 className="mr-2 h-4 w-4" /> Clôturer
+                <CheckCircle2 className="mr-2 h-4 w-4" /> {t('projects.close')}
               </PremiumButton>
             )}
             {canDeleteProject && (
@@ -153,7 +147,7 @@ export const ProjectDetails = () => {
                 disabled={isDeleting}
                 className="text-destructive hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30"
               >
-                <Trash2 className="mr-2 h-4 w-4" /> Supprimer
+                <Trash2 className="mr-2 h-4 w-4" /> {t('projects.delete')}
               </PremiumButton>
             )}
           </div>
@@ -161,15 +155,15 @@ export const ProjectDetails = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <AnimatedCard className="p-4 flex items-center gap-4">
-            <div className="p-2 rounded-lg bg-blue-500/10 text-blue-500">
+            <div className="p-2 rounded-lg bg-primary/10 text-primary">
               <Calendar size={20} />
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">Échéance</p>
+              <p className="text-xs text-muted-foreground">{t('projects.deadline')}</p>
               <p className="text-sm font-semibold">
                 {project.endDate
                   ? new Date(project.endDate).toLocaleDateString()
-                  : "Non définie"}
+                  : t('projects.deadlineUnset')}
               </p>
             </div>
           </AnimatedCard>
@@ -183,13 +177,13 @@ export const ProjectDetails = () => {
               <UsersIcon size={20} />
             </div>
             <div className="flex-1">
-              <p className="text-xs text-muted-foreground">Équipe</p>
+              <p className="text-xs text-muted-foreground">{t('projects.team')}</p>
               <p className="text-sm font-semibold">
-                {(project as any).members?.length || 0} membres
+                {t('projects.memberCount', { count: (project as any).members?.length || 0 })}
               </p>
               {canManageMembers && (
                 <p className="text-xs text-primary opacity-80">
-                  Cliquez pour gérer
+                  {t('projects.manageMembers')}
                 </p>
               )}
             </div>
@@ -202,7 +196,7 @@ export const ProjectDetails = () => {
               <Layout size={20} />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs text-muted-foreground">Avancement</p>
+              <p className="text-xs text-muted-foreground">{t('projects.progress')}</p>
               <p className="text-sm font-semibold">
                 {Math.round(
                   Math.min(100, Math.max(0, Number(project.progress) ?? 0)),
@@ -226,7 +220,7 @@ export const ProjectDetails = () => {
             onClick={() => setActiveTab("tasks")}
             className={`pb-4 text-sm font-medium transition-colors relative ${activeTab === "tasks" ? "text-primary" : "text-muted-foreground hover:text-foreground"}`}
           >
-            Tâches
+            {t('projects.tabs.tasks')}
             {activeTab === "tasks" && (
               <motion.div
                 layoutId="activeTab"
@@ -238,7 +232,7 @@ export const ProjectDetails = () => {
             onClick={() => setActiveTab("documents")}
             className={`pb-4 text-sm font-medium transition-colors relative ${activeTab === "documents" ? "text-primary" : "text-muted-foreground hover:text-foreground"}`}
           >
-            Documents
+            {t('projects.tabs.documents')}
             {activeTab === "documents" && (
               <motion.div
                 layoutId="activeTab"
@@ -250,7 +244,7 @@ export const ProjectDetails = () => {
             onClick={() => setActiveTab("history")}
             className={`pb-4 text-sm font-medium transition-colors relative ${activeTab === "history" ? "text-primary" : "text-muted-foreground hover:text-foreground"}`}
           >
-            Historique
+            {t('projects.tabs.history')}
             {activeTab === "history" && (
               <motion.div
                 layoutId="activeTab"
@@ -308,18 +302,18 @@ export const ProjectDetails = () => {
             setProject(updated);
             setShowCloseModal(false);
             toast.success(
-              "Projet clôturé. Toutes les tâches sont marquées comme terminées.",
+              t('projects.closeSuccess')
             );
           } catch {
-            toast.error("Erreur lors de la clôture du projet.");
+            toast.error(t('projects.closeError'));
           } finally {
             setIsClosing(false);
           }
         }}
-        title="Clôturer le projet"
-        description="Êtes-vous sûr de vouloir clôturer ce projet ? Toutes les tâches seront marquées comme terminées et le projet apparaîtra comme clôturé dans le tableau de bord."
-        confirmLabel="Clôturer"
-        cancelLabel="Annuler"
+        title={t('projects.closeTitle')}
+        description={t('projects.closeDesc')}
+        confirmLabel={t('projects.closeConfirm')}
+        cancelLabel={t('common.cancel')}
         variant="warning"
       />
 
@@ -331,19 +325,19 @@ export const ProjectDetails = () => {
           setIsDeleting(true);
           try {
             await projectService.delete(id);
-            toast.success("Projet supprimé");
+            toast.success(t('projects.deleteSuccess'));
             navigate("/projects");
           } catch {
-            toast.error("Impossible de supprimer le projet.");
+            toast.error(t('projects.deleteError'));
           } finally {
             setIsDeleting(false);
             setShowDeleteModal(false);
           }
         }}
-        title="Supprimer le projet"
-        description="Êtes-vous sûr de vouloir supprimer ce projet ? Cette action est irréversible. Toutes les tâches et documents associés seront également supprimés."
-        confirmLabel="Supprimer"
-        cancelLabel="Annuler"
+        title={t('projects.deleteTitle')}
+        description={t('projects.deleteDesc')}
+        confirmLabel={t('projects.deleteConfirm')}
+        cancelLabel={t('common.cancel')}
         variant="danger"
       />
 

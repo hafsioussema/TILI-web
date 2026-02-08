@@ -5,12 +5,14 @@ import { DashboardPM } from './DashboardPM';
 import { DashboardConsultant } from './DashboardConsultant';
 import { Loader2 } from 'lucide-react';
 import { usePageTitle } from '@/lib/hooks/usePageTitle';
+import { useTranslation } from 'react-i18next';
 
 export const Dashboard = () => {
     const { user, isLoading } = useAuthStore();
+    const { t } = useTranslation('common');
     
     // Set page title
-    usePageTitle('Dashboard');
+    usePageTitle(t('dashboard.pageTitle'));
 
     if (isLoading) {
         return (

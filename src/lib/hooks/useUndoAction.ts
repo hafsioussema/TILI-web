@@ -1,5 +1,4 @@
 import { toast } from 'sonner';
-import { Undo2 } from 'lucide-react';
 
 interface UndoAction {
     message: string;
@@ -14,12 +13,7 @@ export const showUndoableToast = ({ message, onUndo }: UndoAction) => {
     toast.success(message, {
         duration: 5000,
         action: {
-            label: (
-                <span className="inline-flex items-center gap-1">
-                    <Undo2 className="h-3 w-3" aria-hidden="true" />
-                    Undo
-                </span>
-            ),
+            label: 'Undo',
             onClick: async () => {
                 try {
                     await onUndo();

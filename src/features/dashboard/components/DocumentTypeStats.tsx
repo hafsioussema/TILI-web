@@ -3,6 +3,7 @@ import { FileText, FileSpreadsheet, FileImage, File } from 'lucide-react';
 import { AnimatedCard } from '@/components/ui/AnimatedCard';
 import { DocumentType } from '@/types/documents';
 import { cn } from '@/lib/utils';
+import { useTranslation } from 'react-i18next';
 
 interface DocumentTypeStatsProps {
     stats: Record<DocumentType, number>;
@@ -16,6 +17,7 @@ const typeConfig: Record<DocumentType, { label: string; icon: any; color: string
 };
 
 export const DocumentTypeStats = ({ stats }: DocumentTypeStatsProps) => {
+    const { t } = useTranslation('common');
     const total = Object.values(stats).reduce((a, b) => a + b, 0);
 
     return (
@@ -59,7 +61,7 @@ export const DocumentTypeStats = ({ stats }: DocumentTypeStatsProps) => {
 
             {total === 0 && (
                 <div className="flex flex-col items-center justify-center py-8 text-center">
-                    <p className="text-sm text-muted-foreground">Aucun document disponible</p>
+                    <p className="text-sm text-muted-foreground">{t('components.documentStats.noDocuments')}</p>
                 </div>
             )}
         </AnimatedCard>

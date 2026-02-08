@@ -33,8 +33,8 @@ export function ChatButton({ projectId, className = '' }: ChatButtonProps) {
             onClick={handleClick}
             className={`relative flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
                 isActive
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
             } ${className}`}
         >
             <MessageCircle className="w-5 h-5" />
@@ -82,8 +82,8 @@ export function FloatingChatButton({ projectId }: FloatingChatButtonProps) {
             onClick={handleClick}
             className={`fixed bottom-6 right-6 w-14 h-14 rounded-full shadow-lg flex items-center justify-center z-30 ${
                 isActive
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-white dark:bg-gray-800 text-blue-600 dark:text-blue-400 hover:bg-gray-50 dark:hover:bg-gray-700'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-card text-primary hover:bg-muted'
             }`}
         >
             <MessageCircle className="w-6 h-6" />

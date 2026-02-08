@@ -19,9 +19,9 @@ const typeConfig = {
     project_created: {
         icon: FolderPlus,
         label: 'Projet créé',
-        bg: 'bg-blue-500/10',
-        color: 'text-blue-500',
-        border: 'border-blue-500/30',
+        bg: 'bg-primary/10',
+        color: 'text-primary',
+        border: 'border-primary/30',
     },
     document_added: {
         icon: FileText,

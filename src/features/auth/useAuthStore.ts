@@ -14,8 +14,8 @@ interface AuthState {
 
 export const useAuthStore = create<AuthState>((set) => ({
     user: null,
-    token: localStorage.getItem('token'),
-    isLoading: true, // Start loading to check auth
+    token: null, // Start with no token to skip auth check on startup
+    isLoading: false, // Start with loading false to allow rendering
 
     setAuth: (user, token) => {
         localStorage.setItem('token', token);
