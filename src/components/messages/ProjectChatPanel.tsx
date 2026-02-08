@@ -111,12 +111,12 @@ export function ProjectChatPanel({ projectId, projectName, members = [] }: Proje
                 animate={{ x: 0, opacity: 1 }}
                 exit={{ x: 400, opacity: 0 }}
                 transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-                className="fixed right-0 top-16 bottom-0 w-96 bg-white dark:bg-slate-900 border-l border-gray-200 dark:border-slate-700/50 shadow-2xl z-40 flex flex-col"
+                className="fixed right-0 top-16 bottom-0 w-96 bg-card border-l border-border shadow-2xl z-40 flex flex-col"
             >
                 {/* Header */}
-                <div className="flex items-center justify-between px-4 py-4 border-b border-gray-200 dark:border-slate-700/50 bg-gray-50 dark:bg-slate-800">
+                <div className="flex items-center justify-between px-4 py-4 border-b border-border bg-muted">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-lg">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary flex items-center justify-center shadow-lg">
                             <MessageCircle className="w-5 h-5 text-white" />
                         </div>
                         <div>
@@ -140,18 +140,18 @@ export function ProjectChatPanel({ projectId, projectName, members = [] }: Proje
                 </div>
 
                 {/* Messages */}
-                <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50 dark:bg-slate-900/50">
+                <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-muted">
                     {isLoading && projectMessages.length === 0 ? (
                         <div className="flex items-center justify-center h-full">
-                            <div className="animate-spin rounded-full h-8 w-8 border-2 border-blue-500 border-t-transparent" />
+                            <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary border-t-transparent" />
                         </div>
                     ) : projectMessages.length === 0 ? (
                         <div className="flex flex-col items-center justify-center h-full">
-                            <div className="w-16 h-16 rounded-full bg-gray-200 dark:bg-slate-800 flex items-center justify-center mb-3">
-                                <MessageCircle className="w-8 h-8 text-gray-400 dark:text-slate-600" />
+                            <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-3">
+                                <MessageCircle className="w-8 h-8 text-muted-foreground" />
                             </div>
-                            <p className="text-sm font-medium text-gray-600 dark:text-slate-400">Aucun message</p>
-                            <p className="text-xs text-gray-400 dark:text-slate-500 mt-1">Commencez la conversation !</p>
+                            <p className="text-sm font-medium text-muted-foreground">Aucun message</p>
+                            <p className="text-xs text-muted-foreground mt-1">Commencez la conversation !</p>
                         </div>
                     ) : (
                         projectMessages.map((message) => (
@@ -167,11 +167,11 @@ export function ProjectChatPanel({ projectId, projectName, members = [] }: Proje
 
                 {/* Typing Indicator */}
                 {currentTypingUsers.length > 0 && (
-                    <div className="px-4 py-2 text-xs text-gray-500 dark:text-slate-400 flex items-center gap-2 bg-gray-100 dark:bg-slate-800/50">
+                    <div className="px-4 py-2 text-xs text-muted-foreground flex items-center gap-2 bg-muted">
                         <div className="flex gap-1">
-                            <span className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-bounce [animation-delay:0ms]" />
-                            <span className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-bounce [animation-delay:150ms]" />
-                            <span className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-bounce [animation-delay:300ms]" />
+                            <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce [animation-delay:0ms]" />
+                            <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce [animation-delay:150ms]" />
+                            <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce [animation-delay:300ms]" />
                         </div>
                         <span>
                             {currentTypingUsers.map(u => u.userName).join(', ')} {currentTypingUsers.length === 1 ? 'écrit' : 'écrivent'}...
@@ -180,7 +180,7 @@ export function ProjectChatPanel({ projectId, projectName, members = [] }: Proje
                 )}
 
                 {/* Input */}
-                <div className="p-4 border-t border-gray-200 dark:border-slate-700/50 bg-white dark:bg-slate-800/80 backdrop-blur-sm">
+                <div className="p-4 border-t border-border bg-card backdrop-blur-sm">
                     <MentionInput
                         value={messageInput}
                         onChange={handleInputChange}
@@ -192,7 +192,7 @@ export function ProjectChatPanel({ projectId, projectName, members = [] }: Proje
                         <button
                             onClick={handleSend}
                             disabled={!messageInput.trim()}
-                            className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all text-sm font-medium shadow-lg"
+                            className="flex items-center gap-2 px-4 py-2.5 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all text-sm font-medium shadow-lg focus-visible:ring-2 focus-visible:ring-ring"
                         >
                             <Send className="w-4 h-4" />
                             Envoyer
@@ -232,7 +232,7 @@ function ChatMessage({ message, isOwnMessage }: ChatMessageProps) {
             parts.push(
                 <span 
                     key={match.index} 
-                    className="bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300 px-1.5 py-0.5 rounded font-medium"
+                    className="bg-primary/10 text-primary px-1.5 py-0.5 rounded font-medium"
                 >
                     @{match[1]}
                 </span>
@@ -276,10 +276,10 @@ function ChatMessage({ message, isOwnMessage }: ChatMessageProps) {
                     <img
                         src={avatarUrl}
                         alt={`${sender.prenom} ${sender.nom}`}
-                        className="w-9 h-9 rounded-full object-cover ring-2 ring-gray-200 dark:ring-slate-700"
+                        className="w-9 h-9 rounded-full object-cover ring-2 ring-border"
                     />
                 ) : (
-                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center ring-2 ring-gray-200 dark:ring-slate-700">
+                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-primary flex items-center justify-center ring-2 ring-border">
                         <span className="text-xs font-bold text-white">{getInitials()}</span>
                     </div>
                 )}
@@ -288,16 +288,16 @@ function ChatMessage({ message, isOwnMessage }: ChatMessageProps) {
             {/* Message content */}
             <div className={`flex flex-col max-w-[75%] ${isOwnMessage ? 'items-end' : ''}`}>
                 <div className={`flex items-center gap-2 mb-1 ${isOwnMessage ? 'flex-row-reverse' : ''}`}>
-                    <span className="text-xs font-semibold text-gray-700 dark:text-slate-300">
+                    <span className="text-xs font-semibold text-foreground">
                         {sender.prenom} {sender.nom}
                     </span>
-                    <span className="text-[10px] text-gray-400 dark:text-slate-500">{timeAgo}</span>
+                    <span className="text-[10px] text-muted-foreground">{timeAgo}</span>
                 </div>
                 <div 
                     className={`px-4 py-2.5 rounded-2xl ${
                         isOwnMessage 
-                            ? 'bg-blue-600 text-white rounded-br-md' 
-                            : 'bg-gray-200 dark:bg-slate-800 text-gray-900 dark:text-slate-100 rounded-bl-md'
+                            ? 'bg-primary text-primary-foreground rounded-br-md' 
+                            : 'bg-muted text-foreground rounded-bl-md'
                     }`}
                 >
                     <p className="text-sm whitespace-pre-wrap break-words leading-relaxed">

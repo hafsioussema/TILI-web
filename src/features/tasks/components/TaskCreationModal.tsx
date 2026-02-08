@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import { X, Calendar, AlignLeft, User, Flag } from "lucide-react";
+import { X, Calendar } from "lucide-react";
 import { PremiumButton } from "@/components/ui/PremiumButton";
 import { taskService, TaskStatus, TaskPriority } from "../taskService";
 import { userService } from "@/features/users/userService";
@@ -139,8 +139,8 @@ export const TaskCreationModal = ({
             </div>
           )}
 
-          <div className="space-y-2">
-            <label htmlFor="task-title" className="text-sm font-medium text-muted-foreground ml-1">
+          <div className="space-y-3">
+            <label htmlFor="task-title" className="text-sm font-semibold text-foreground ml-0.5">
               Titre de la tâche <span className="text-destructive" aria-label="requis">*</span>
             </label>
             <input
@@ -149,7 +149,7 @@ export const TaskCreationModal = ({
               autoFocus
               type="text"
               placeholder="ex: Design du header"
-              className="w-full bg-secondary/50 border-border/50 rounded-xl px-4 py-3 text-lg font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all border"
+              className="w-full bg-card border border-border rounded-xl px-4 py-3 text-lg font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 hover:border-border/80 transition-all text-foreground placeholder:text-muted-foreground"
               value={formData.title}
               onChange={handleChange}
               aria-required="true"
@@ -161,50 +161,44 @@ export const TaskCreationModal = ({
             )}
           </div>
 
-          <div className="space-y-4">
-            <div className="flex items-start gap-3">
-              <AlignLeft className="mt-1 h-5 w-5 text-muted-foreground" aria-hidden="true" />
-              <div className="flex-1 space-y-1">
-                <label htmlFor="task-description" className="text-sm font-medium">Description</label>
-                <textarea
-                  id="task-description"
-                  name="description"
-                  className="w-full bg-secondary/30 border-border/50 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 min-h-[100px] border"
-                  placeholder="Ajoutez des détails sur cette tâche..."
-                  value={formData.description}
-                  onChange={handleChange}
-                />
-              </div>
+          <div className="space-y-3">
+            <div className="space-y-3">
+              <label htmlFor="task-description" className="text-sm font-semibold text-foreground ml-0.5">Description</label>
+              <textarea
+                id="task-description"
+                name="description"
+                className="w-full bg-card border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 hover:border-border/80 transition-all min-h-[100px] resize-none text-foreground placeholder:text-muted-foreground"
+                placeholder="Ajoutez des détails sur cette tâche..."
+                value={formData.description}
+                onChange={handleChange}
+              />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="flex items-center gap-3">
-                <Flag className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
-                <div className="flex-1 space-y-1">
-                  <label htmlFor="task-priority" className="text-sm font-medium">Priorité</label>
-                  <select
-                    id="task-priority"
-                    name="priority"
-                    className="w-full bg-secondary/30 border-border/50 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 border cursor-pointer"
-                    value={formData.priority}
-                    onChange={handleChange}
-                  >
-                    <option value={TaskPriority.LOW}>Basse</option>
-                    <option value={TaskPriority.MEDIUM}>Moyenne</option>
-                    <option value={TaskPriority.HIGH}>Haute</option>
-                  </select>
-                </div>
+            <div className="grid grid-cols-2 gap-5">
+              <div className="space-y-3">
+                <label htmlFor="task-priority" className="text-sm font-semibold text-foreground ml-0.5">Priorité</label>
+                <select
+                  id="task-priority"
+                  name="priority"
+                  className="w-full bg-card border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 hover:border-border/80 transition-all text-foreground cursor-pointer"
+                  value={formData.priority}
+                  onChange={handleChange}
+                >
+                  <option value={TaskPriority.LOW}>Basse</option>
+                  <option value={TaskPriority.MEDIUM}>Moyenne</option>
+                  <option value={TaskPriority.HIGH}>Haute</option>
+                </select>
               </div>
 
-              <div className="flex items-center gap-3">
-                <Calendar className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
-                <div className="flex-1 space-y-1">
-                  <label htmlFor="task-duedate" className="text-sm font-medium">Échéance</label>
+              <div className="space-y-3">
+                <label htmlFor="task-duedate" className="text-sm font-semibold text-foreground ml-0.5">Échéance</label>
+                <div className="relative">
+                  <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
                   <input
                     id="task-duedate"
                     name="dueDate"
                     type="date"
-                    className="w-full bg-secondary/30 border-border/50 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 border appearance-none cursor-pointer"
+                    className="w-full bg-card border border-border rounded-xl pl-10 pr-4 py-3 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 hover:border-border/80 transition-all appearance-none text-foreground cursor-pointer"
                     value={formData.dueDate}
                     onChange={handleChange}
                   />
@@ -212,25 +206,22 @@ export const TaskCreationModal = ({
               </div>
             </div>
 
-            <div className="flex items-center gap-3">
-              <User className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
-              <div className="flex-1 space-y-1">
-                <label htmlFor="task-assignee" className="text-sm font-medium">Assigner à</label>
-                <select
-                  id="task-assignee"
-                  name="assigneeId"
-                  className="w-full bg-secondary/30 border-border/50 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 border cursor-pointer"
-                  value={formData.assigneeId}
-                  onChange={handleChange}
-                >
-                  <option value="">Non assigné</option>
-                  {users.map((u) => (
-                    <option key={u.id} value={u.id}>
-                      {u.prenom} {u.nom}
-                    </option>
-                  ))}
-                </select>
-              </div>
+            <div className="space-y-3">
+              <label htmlFor="task-assignee" className="text-sm font-semibold text-foreground ml-0.5">Assigner à</label>
+              <select
+                id="task-assignee"
+                name="assigneeId"
+                className="w-full bg-card border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 hover:border-border/80 transition-all text-foreground cursor-pointer"
+                value={formData.assigneeId}
+                onChange={handleChange}
+              >
+                <option value="">Non assigné</option>
+                {users.map((u) => (
+                  <option key={u.id} value={u.id}>
+                    {u.prenom} {u.nom}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
         </form>

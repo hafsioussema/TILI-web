@@ -1,6 +1,7 @@
 import { AnimatedCard } from '@/components/ui/AnimatedCard';
 import { FileText, Download, Eye, FileSpreadsheet, FileImage } from 'lucide-react';
 import { PremiumButton } from '@/components/ui/PremiumButton';
+import { useTranslation } from 'react-i18next';
 
 const documents = [
     { name: "Project Requirements.pdf", type: "PDF", size: "2.4 MB", author: "Sarah K.", date: "Feb 10, 2026", icon: FileText, color: "text-red-500", bg: "bg-red-500/10" },
@@ -10,17 +11,19 @@ const documents = [
 ];
 
 export const DocumentList = () => {
+    const { t } = useTranslation('common');
+    
     return (
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight text-gradient-primary">Documents</h1>
-                    <p className="text-muted-foreground mt-1">Access and manage project files.</p>
+                    <h1 className="text-3xl font-bold tracking-tight text-gradient-primary">{t('components.documentList.title')}</h1>
+                    <p className="text-muted-foreground mt-1">{t('components.documentList.subtitle')}</p>
                 </div>
-                <PremiumButton>Upload File</PremiumButton>
+                <PremiumButton>{t('components.documentList.uploadButton')}</PremiumButton>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                 {documents.map((doc, index) => (
                     <AnimatedCard
                         key={index}

@@ -4,16 +4,30 @@ import { Loader2, ArrowLeft, Mail, CheckCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { authService } from './authService';
 import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
 
 export const ForgotPasswordPage = () => {
     const [email, setEmail] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [isSuccess, setIsSuccess] = useState(false);
     const navigate = useNavigate();
+    const { t } = useTranslation('common');
 
     useEffect(() => {
-        document.title = 'Mot de passe oublié - TILI Workspace';
-    }, []);
+        document.title = t('auth.forgotPageTitle');
+        
+        // Force dark mode on this page
+        const root = document.documentElement;
+        const previousTheme = root.classList.contains('dark');
+        root.classList.add('dark');
+        
+        // Cleanup: restore previous theme when leaving the page
+        return () => {
+            if (!previousTheme) {
+                root.classList.remove('dark');
+            }
+        };
+    }, [t]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -22,9 +36,9 @@ export const ForgotPasswordPage = () => {
         try {
             await authService.forgotPassword(email);
             setIsSuccess(true);
-            toast.success('Code OTP envoyé par email');
+            toast.success(t('auth.otpSentToast'));
         } catch {
-            toast.error('Erreur lors de l\'envoi du code');
+            toast.error(t('auth.otpSendError'));
         } finally {
             setIsLoading(false);
         }
@@ -63,16 +77,16 @@ export const ForgotPasswordPage = () => {
                                     >
                                         <Mail className="text-primary h-8 w-8" />
                                     </motion.div>
-                                    <h1 className="text-3xl font-bold text-foreground tracking-tight">Mot de passe oublié</h1>
+                                    <h1 className="text-3xl font-bold text-foreground tracking-tight">{t('auth.forgotTitle')}</h1>
                                     <p className="text-muted-foreground mt-2 text-base">
-                                        Entrez votre email pour recevoir un code de vérification.
+                                        {t('auth.forgotDesc')}
                                     </p>
                                 </div>
 
                                 <form onSubmit={handleSubmit} className="space-y-6">
                                     <div className="space-y-2">
                                         <label htmlFor="email-input" className="text-sm font-semibold text-foreground">
-                                            Email
+                                            {t('auth.emailLabel')}
                                         </label>
                                         <input
                                             id="email-input"
@@ -80,7 +94,7 @@ export const ForgotPasswordPage = () => {
                                             value={email}
                                             onChange={(e) => setEmail(e.target.value)}
                                             className="w-full bg-background border border-input rounded-xl px-4 py-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/60 transition-all"
-                                            placeholder="nom@organisation.org"
+                                            placeholder={t('auth.emailPlaceholder')}
                                             required
                                         />
                                     </div>
@@ -95,7 +109,7 @@ export const ForgotPasswordPage = () => {
                                         {isLoading ? (
                                             <Loader2 className="animate-spin h-5 w-5" />
                                         ) : (
-                                            <>Envoyer le code</>
+                                            <>{t('auth.sendCode')}</>
                                         )}
                                     </motion.button>
                                 </form>
@@ -106,7 +120,7 @@ export const ForgotPasswordPage = () => {
                                         className="text-sm text-primary hover:underline inline-flex items-center gap-1"
                                     >
                                         <ArrowLeft className="h-4 w-4" />
-                                        Retour à la connexion
+                                        {t('auth.backToLogin')}
                                     </Link>
                                 </div>
                             </motion.div>
@@ -126,9 +140,9 @@ export const ForgotPasswordPage = () => {
                                     >
                                         <CheckCircle className="text-emerald-500 h-8 w-8" />
                                     </motion.div>
-                                    <h1 className="text-2xl font-bold text-foreground">Code envoyé !</h1>
+                                    <h1 className="text-2xl font-bold text-foreground">{t('auth.codeSentTitle')}</h1>
                                     <p className="text-muted-foreground mt-2">
-                                        Un code de vérification a été envoyé à <strong>{email}</strong>
+                                        {t('auth.codeSentDesc', { email })}
                                     </p>
                                 </div>
 
@@ -138,17 +152,17 @@ export const ForgotPasswordPage = () => {
                                     onClick={handleContinue}
                                     className="w-full bg-primary text-primary-foreground font-bold py-3.5 rounded-xl hover:bg-primary/90 transition-colors"
                                 >
-                                    Entrer le code
+                                    {t('auth.enterCode')}
                                 </motion.button>
 
                                 <p className="mt-4 text-sm text-muted-foreground">
-                                    Vous n'avez pas reçu l'email ?{' '}
+                                    {t('auth.noEmail')}{' '}
                                     <button
                                         onClick={handleSubmit}
                                         disabled={isLoading}
                                         className="text-primary hover:underline"
                                     >
-                                        Renvoyer
+                                        {t('auth.resend')}
                                     </button>
                                 </p>
                             </motion.div>

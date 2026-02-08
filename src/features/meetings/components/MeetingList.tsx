@@ -4,10 +4,17 @@ import { meetingService } from '../services/meetingService';
 import type { Meeting } from '../types';
 import { FileAudio, Calendar, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 export const MeetingList: React.FC = () => {
     const [meetings, setMeetings] = useState<Meeting[]>([]);
     const [loading, setLoading] = useState(true);
+    const { t, i18n } = useTranslation('common');
+    const locale = i18n.resolvedLanguage?.startsWith('fr')
+        ? 'fr-FR'
+        : i18n.resolvedLanguage?.startsWith('ar') || i18n.resolvedLanguage?.startsWith('tn')
+            ? 'ar-TN'
+            : 'en-US';
 
     useEffect(() => {
         loadMeetings();
@@ -16,7 +23,6 @@ export const MeetingList: React.FC = () => {
     const loadMeetings = async () => {
         try {
             const data = await meetingService.getAllMeetings();
-            // Filter out SCHEDULED meetings - only show recordings/analyses
             const recordingsOnly = data.filter(m => m.status !== 'SCHEDULED');
             setMeetings(recordingsOnly);
         } catch (e) {
@@ -28,22 +34,27 @@ export const MeetingList: React.FC = () => {
 
     if (loading) {
         return (
-            <div className="flex justify-center py-12">
+            <div className="flex justify-center py-12" role="status" aria-label={t('meetings.loading')}>
                 <Loader2 className="w-8 h-8 text-primary animate-spin" />
             </div>
         );
     }
 
     return (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+            role="list"
+            aria-label={t('meetings.listAria')}
+        >
             {meetings.map((meeting) => (
                 <Link
                     key={meeting.id}
                     to={`/meetings/${meeting.id}`}
-                    className="group bg-card rounded-2xl border border-border/80 p-5 hover:shadow-md transition-shadow cursor-pointer block"
+                    role="listitem"
+                    className="group bg-card rounded-2xl border border-border/80 p-5 hover:shadow-md hover:border-primary/30 transition-all cursor-pointer block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 >
                     <div className="flex justify-between items-start mb-4">
-                        <div className="p-2 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors">
+                        <div className="p-2 bg-primary/10 rounded-xl group-hover:bg-primary/20 transition-colors">
                             <FileAudio className="w-5 h-5 text-primary" />
                         </div>
                         <StatusBadge status={meeting.status} />
@@ -56,9 +67,8 @@ export const MeetingList: React.FC = () => {
                     <div className="flex items-center gap-4 text-xs text-muted-foreground">
                         <div className="flex items-center gap-1.5">
                             <Calendar className="w-3.5 h-3.5" />
-                            {new Date(meeting.createdAt).toLocaleDateString()}
+                            {new Date(meeting.createdAt).toLocaleDateString(locale)}
                         </div>
-                        {/* Duration could be added if available from backend */}
                     </div>
                 </Link>
             ))}
@@ -66,7 +76,7 @@ export const MeetingList: React.FC = () => {
             {meetings.length === 0 && (
                 <div className="col-span-full py-12 text-center text-muted-foreground bg-muted/40 rounded-2xl border border-dashed border-border/70">
                     <FileAudio className="w-10 h-10 mx-auto text-muted-foreground/60 mb-3" />
-                    <p className="text-sm">Aucun enregistrement ou analyse disponible.</p>
+                    <p className="text-sm">{t('meetings.emptyRecordings')}</p>
                 </div>
             )}
         </div>
@@ -74,20 +84,21 @@ export const MeetingList: React.FC = () => {
 };
 
 const StatusBadge = ({ status }: { status: Meeting['status'] }) => {
+    const { t } = useTranslation('common');
     const styles = {
-        SCHEDULED: 'bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-950/40 dark:text-blue-200 dark:border-blue-900/60',
-        UPLOADED: 'bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-900/60 dark:text-slate-200 dark:border-slate-800',
+        SCHEDULED: 'bg-accent text-accent-foreground border border-border',
+        UPLOADED: 'bg-muted text-muted-foreground border border-border',
         PROCESSING: 'bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/40 dark:text-amber-200 dark:border-amber-900/60 animate-pulse',
         COMPLETED: 'bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-200 dark:border-emerald-900/60',
-        FAILED: 'bg-red-50 text-red-700 border border-red-200 dark:bg-red-950/40 dark:text-red-200 dark:border-red-900/60'
+        FAILED: 'bg-destructive/10 text-destructive border border-destructive/20'
     };
 
     const labels = {
-        SCHEDULED: 'Scheduled',
-        UPLOADED: 'Uploaded',
-        PROCESSING: 'Processing AI',
-        COMPLETED: 'Ready',
-        FAILED: 'Failed'
+        SCHEDULED: t('meetings.status.scheduled'),
+        UPLOADED: t('meetings.status.uploaded'),
+        PROCESSING: t('meetings.status.processing'),
+        COMPLETED: t('meetings.status.completed'),
+        FAILED: t('meetings.status.failed')
     };
 
     return (

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { X, Briefcase, Calendar, Users, FileText } from "lucide-react";
+import { X, Briefcase, Users } from "lucide-react";
 import { toast } from "sonner";
 import { PremiumButton } from "@/components/ui/PremiumButton";
 import { userService } from "@/features/users/userService";
@@ -156,14 +156,14 @@ export const ProjectEditModal = ({
           onSubmit={handleSubmit}
           className="p-6 space-y-6 max-h-[70vh] overflow-y-auto"
         >
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-muted-foreground ml-1">
+          <div className="space-y-3">
+            <label className="text-sm font-semibold text-foreground ml-0.5">
               Nom du projet
             </label>
             <input
               type="text"
               placeholder="ex: Refonte de la plateforme"
-              className="w-full bg-secondary/50 border-border/50 rounded-xl px-4 py-3 text-lg font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all border"
+              className="w-full bg-card border border-border rounded-xl px-4 py-3 text-base font-medium text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 hover:border-border/80 transition-all"
               value={formData.name}
               onChange={(e) =>
                 setFormData({ ...formData, name: e.target.value })
@@ -171,28 +171,27 @@ export const ProjectEditModal = ({
             />
           </div>
 
-          <div className="flex items-start gap-3">
-            <FileText className="mt-3 h-5 w-5 text-muted-foreground shrink-0" />
-            <div className="flex-1 space-y-1">
-              <label className="text-sm font-medium">Description</label>
-              <textarea
-                className="w-full bg-secondary/30 border-border/50 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 min-h-[100px] border"
-                placeholder="Décrivez l'objectif et la portée du projet..."
-                value={formData.description}
-                onChange={(e) =>
-                  setFormData({ ...formData, description: e.target.value })
-                }
-              />
-            </div>
+          <div className="space-y-3">
+            <label className="text-sm font-semibold text-foreground ml-0.5">
+              Description
+            </label>
+            <textarea
+              className="w-full bg-card border border-border rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 hover:border-border/80 min-h-[100px] transition-all resize-none"
+              placeholder="Décrivez l'objectif et la portée du projet..."
+              value={formData.description}
+              onChange={(e) =>
+                setFormData({ ...formData, description: e.target.value })
+              }
+            />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-muted-foreground ml-1">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div className="space-y-3">
+              <label className="text-sm font-semibold text-foreground ml-0.5">
                 Statut
               </label>
               <select
-                className="w-full bg-secondary/30 border-border/50 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary/20 border"
+                className="w-full bg-card border border-border rounded-xl px-4 py-3 text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 hover:border-border/80 transition-all"
                 value={formData.status}
                 onChange={(e) =>
                   setFormData({
@@ -207,26 +206,25 @@ export const ProjectEditModal = ({
               </select>
             </div>
 
-            <div className="flex items-start gap-3">
-              <Calendar className="mt-3 h-5 w-5 text-muted-foreground shrink-0" />
-              <div className="flex-1 space-y-1">
-                <label className="text-sm font-medium">Date de fin</label>
-                <input
-                  type="date"
-                  className="w-full bg-secondary/30 border-border/50 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary/20 border"
-                  value={formData.endDate}
-                  onChange={(e) =>
-                    setFormData({ ...formData, endDate: e.target.value })
-                  }
-                />
-              </div>
+            <div className="space-y-3">
+              <label className="text-sm font-semibold text-foreground ml-0.5">
+                Date de fin
+              </label>
+              <input
+                type="date"
+                className="w-full bg-card border border-border rounded-xl px-4 py-3 text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 hover:border-border/80 transition-all"
+                value={formData.endDate}
+                onChange={(e) =>
+                  setFormData({ ...formData, endDate: e.target.value })
+                }
+              />
             </div>
           </div>
 
           <div className="space-y-4">
             <div className="flex items-center gap-3">
-              <Users className="h-5 w-5 text-muted-foreground" />
-              <label className="text-sm font-medium">Membres de l'équipe</label>
+              <Users className="h-5 w-5 text-primary" />
+              <label className="text-sm font-semibold text-foreground">Membres de l'equipe</label>
             </div>
 
             {loading ? (
@@ -238,7 +236,7 @@ export const ProjectEditModal = ({
                 {users.map((u) => (
                   <label
                     key={u.id}
-                    className="flex items-center gap-3 p-3 rounded-lg hover:bg-secondary/50 cursor-pointer transition-colors"
+                    className="flex items-center gap-3 p-3 rounded-xl hover:bg-secondary/50 cursor-pointer transition-colors"
                   >
                     <input
                       type="checkbox"

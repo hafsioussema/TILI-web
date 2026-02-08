@@ -4,6 +4,7 @@ import { Loader2, ArrowLeft, KeyRound, CheckCircle, Eye, EyeOff } from 'lucide-r
 import { motion, AnimatePresence } from 'framer-motion';
 import { authService } from './authService';
 import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
 
 export const ResetPasswordPage = () => {
     const location = useLocation();
@@ -15,21 +16,34 @@ export const ResetPasswordPage = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [isSuccess, setIsSuccess] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
+    const { t } = useTranslation('common');
 
     useEffect(() => {
-        document.title = 'Réinitialiser le mot de passe - TILI Workspace';
-    }, []);
+        document.title = t('auth.resetPageTitle');
+        
+        // Force dark mode on this page
+        const root = document.documentElement;
+        const previousTheme = root.classList.contains('dark');
+        root.classList.add('dark');
+        
+        // Cleanup: restore previous theme when leaving the page
+        return () => {
+            if (!previousTheme) {
+                root.classList.remove('dark');
+            }
+        };
+    }, [t]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
         if (newPassword !== confirmPassword) {
-            toast.error('Les mots de passe ne correspondent pas');
+            toast.error(t('auth.passwordMismatch'));
             return;
         }
 
         if (newPassword.length < 8) {
-            toast.error('Le mot de passe doit contenir au moins 8 caractères');
+            toast.error(t('auth.passwordMin'));
             return;
         }
 
@@ -38,10 +52,10 @@ export const ResetPasswordPage = () => {
         try {
             await authService.resetPassword(email, otpCode, newPassword);
             setIsSuccess(true);
-            toast.success('Mot de passe réinitialisé avec succès');
+            toast.success(t('auth.resetSuccessToast'));
         } catch (err: unknown) {
             const error = err as { response?: { data?: { message?: string } } };
-            toast.error(error.response?.data?.message || 'Code invalide ou expiré');
+            toast.error(error.response?.data?.message || t('auth.invalidOrExpiredCode'));
         } finally {
             setIsLoading(false);
         }
@@ -76,9 +90,9 @@ export const ResetPasswordPage = () => {
                                     >
                                         <KeyRound className="text-primary h-8 w-8" />
                                     </motion.div>
-                                    <h1 className="text-3xl font-bold text-foreground tracking-tight">Nouveau mot de passe</h1>
+                                    <h1 className="text-3xl font-bold text-foreground tracking-tight">{t('auth.resetTitle')}</h1>
                                     <p className="text-muted-foreground mt-2 text-base">
-                                        Entrez le code reçu et votre nouveau mot de passe.
+                                        {t('auth.resetDesc')}
                                     </p>
                                 </div>
 
@@ -86,7 +100,7 @@ export const ResetPasswordPage = () => {
                                     {!location.state?.email && (
                                         <div className="space-y-2">
                                             <label htmlFor="email-input" className="text-sm font-semibold text-foreground">
-                                                Email
+                                                {t('auth.emailLabel')}
                                             </label>
                                             <input
                                                 id="email-input"
@@ -94,7 +108,7 @@ export const ResetPasswordPage = () => {
                                                 value={email}
                                                 onChange={(e) => setEmail(e.target.value)}
                                                 className="w-full bg-background border border-input rounded-xl px-4 py-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all"
-                                                placeholder="nom@organisation.org"
+                                                placeholder={t('auth.emailPlaceholder')}
                                                 required
                                             />
                                         </div>
@@ -102,7 +116,7 @@ export const ResetPasswordPage = () => {
 
                                     <div className="space-y-2">
                                         <label htmlFor="otp-input" className="text-sm font-semibold text-foreground">
-                                            Code de vérification
+                                            {t('auth.verificationCode')}
                                         </label>
                                         <input
                                             id="otp-input"
@@ -115,13 +129,13 @@ export const ResetPasswordPage = () => {
                                             required
                                         />
                                         <p className="text-xs text-muted-foreground">
-                                            Entrez le code à 6 chiffres reçu par email
+                                            {t('auth.verificationHelper')}
                                         </p>
                                     </div>
 
                                     <div className="space-y-2">
                                         <label htmlFor="password-input" className="text-sm font-semibold text-foreground">
-                                            Nouveau mot de passe
+                                            {t('auth.newPassword')}
                                         </label>
                                         <div className="relative">
                                             <input
@@ -130,7 +144,7 @@ export const ResetPasswordPage = () => {
                                                 value={newPassword}
                                                 onChange={(e) => setNewPassword(e.target.value)}
                                                 className="w-full bg-background border border-input rounded-xl px-4 py-3 pr-12 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all"
-                                                placeholder="••••••••"
+                                                placeholder={t('auth.passwordPlaceholder')}
                                                 required
                                             />
                                             <button
@@ -145,7 +159,7 @@ export const ResetPasswordPage = () => {
 
                                     <div className="space-y-2">
                                         <label htmlFor="confirm-password-input" className="text-sm font-semibold text-foreground">
-                                            Confirmer le mot de passe
+                                            {t('auth.confirmPassword')}
                                         </label>
                                         <input
                                             id="confirm-password-input"
@@ -153,7 +167,7 @@ export const ResetPasswordPage = () => {
                                             value={confirmPassword}
                                             onChange={(e) => setConfirmPassword(e.target.value)}
                                             className="w-full bg-background border border-input rounded-xl px-4 py-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all"
-                                            placeholder="••••••••"
+                                            placeholder={t('auth.passwordPlaceholder')}
                                             required
                                         />
                                     </div>
@@ -168,7 +182,7 @@ export const ResetPasswordPage = () => {
                                         {isLoading ? (
                                             <Loader2 className="animate-spin h-5 w-5" />
                                         ) : (
-                                            <>Réinitialiser le mot de passe</>
+                                            <>{t('auth.resetButton')}</>
                                         )}
                                     </motion.button>
                                 </form>
@@ -179,7 +193,7 @@ export const ResetPasswordPage = () => {
                                         className="text-sm text-primary hover:underline inline-flex items-center gap-1"
                                     >
                                         <ArrowLeft className="h-4 w-4" />
-                                        Renvoyer un code
+                                        {t('auth.resend')}
                                     </Link>
                                 </div>
                             </motion.div>
@@ -199,9 +213,9 @@ export const ResetPasswordPage = () => {
                                     >
                                         <CheckCircle className="text-emerald-500 h-8 w-8" />
                                     </motion.div>
-                                    <h1 className="text-2xl font-bold text-foreground">Mot de passe mis à jour !</h1>
+                                    <h1 className="text-2xl font-bold text-foreground">{t('auth.resetSuccessTitle')}</h1>
                                     <p className="text-muted-foreground mt-2">
-                                        Votre mot de passe a été réinitialisé avec succès.
+                                        {t('auth.resetSuccessDesc')}
                                     </p>
                                 </div>
 
@@ -211,7 +225,7 @@ export const ResetPasswordPage = () => {
                                     onClick={() => navigate('/login')}
                                     className="w-full bg-primary text-primary-foreground font-bold py-3.5 rounded-xl hover:bg-primary/90 transition-colors"
                                 >
-                                    Se connecter
+                                    {t('auth.signInButton')}
                                 </motion.button>
                             </motion.div>
                         )}

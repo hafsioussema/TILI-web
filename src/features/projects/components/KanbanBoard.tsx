@@ -31,8 +31,8 @@ interface Column {
 }
 
 const COLUMNS: Column[] = [
-  { id: TaskStatus.TODO, title: "À Faire", color: "bg-slate-500" },
-  { id: TaskStatus.IN_PROGRESS, title: "En Cours", color: "bg-blue-500" },
+  { id: TaskStatus.TODO, title: "À Faire", color: "bg-muted" },
+  { id: TaskStatus.IN_PROGRESS, title: "En Cours", color: "bg-primary" },
   { id: TaskStatus.DONE, title: "Terminé", color: "bg-green-500" },
 ];
 

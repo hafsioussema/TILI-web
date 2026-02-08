@@ -54,7 +54,7 @@ export const useKeyboardNavigation = () => {
  * Hook for managing focus within a modal or component
  * Traps focus when component is mounted
  */
-export const useFocusTrap = (containerRef: React.RefObject<HTMLDivElement>, isActive = true) => {
+export const useFocusTrap = (containerRef: React.RefObject<HTMLDivElement | null>, isActive = true) => {
   useEffect(() => {
     if (!isActive || !containerRef.current) return;
 

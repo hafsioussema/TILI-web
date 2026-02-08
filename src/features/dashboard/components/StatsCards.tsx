@@ -54,7 +54,7 @@ export const StatsCards = ({ stats, isLoading, averageProgress }: StatsCardsProp
     ];
 
     return (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
             {items.map((stat, index) => (
                 <AnimatedCard key={index} className="flex flex-col justify-between">
                     {isLoading ? (

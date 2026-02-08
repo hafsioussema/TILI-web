@@ -25,42 +25,42 @@ export const Breadcrumbs = ({ items, className }: BreadcrumbsProps) => {
     return (
         <nav
             aria-label="Breadcrumb"
-            className={cn('flex items-center space-x-1 text-sm', className)}
+            className={cn('inline-flex items-center space-x-2 text-sm bg-secondary/20 px-4 py-2.5 rounded-xl border border-border/50', className)}
         >
-            <ol className="flex items-center space-x-1" role="list">
+            <ol className="flex items-center space-x-2" role="list">
                 {items.map((item, index) => {
                     const isLast = index === items.length - 1;
                     const isFirst = index === 0;
 
                     return (
-                        <li key={index} className="flex items-center space-x-1">
+                        <li key={index} className="flex items-center space-x-2">
                             {!isFirst && (
                                 <ChevronRight
-                                    className="h-4 w-4 text-muted-foreground"
+                                    className="h-3.5 w-3.5 text-muted-foreground/50"
                                     aria-hidden="true"
                                 />
                             )}
                             {item.href && !isLast ? (
                                 <Link
                                     to={item.href}
-                                    className="text-muted-foreground hover:text-foreground transition-colors font-medium focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded px-1"
+                                    className="flex items-center gap-1.5 text-muted-foreground hover:text-primary transition-colors font-medium focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded-lg px-2 py-1 hover:bg-secondary/50"
                                     aria-label={`Navigate to ${item.label}`}
                                 >
-                                    {isFirst && <Home className="h-4 w-4 inline mr-1" aria-hidden="true" />}
-                                    {item.label}
+                                    {isFirst && <Home className="h-3.5 w-3.5" aria-hidden="true" />}
+                                    <span>{item.label}</span>
                                 </Link>
                             ) : (
                                 <span
                                     className={cn(
-                                        'font-medium px-1',
+                                        'flex items-center gap-1.5 font-semibold px-2 py-1 rounded-lg',
                                         isLast
-                                            ? 'text-foreground'
+                                            ? 'text-foreground bg-primary/10'
                                             : 'text-muted-foreground'
                                     )}
                                     aria-current={isLast ? 'page' : undefined}
                                 >
-                                    {isFirst && <Home className="h-4 w-4 inline mr-1" aria-hidden="true" />}
-                                    {item.label}
+                                    {isFirst && <Home className="h-3.5 w-3.5" aria-hidden="true" />}
+                                    <span>{item.label}</span>
                                 </span>
                             )}
                         </li>

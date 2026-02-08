@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Keyboard, X, Search, Navigation, Menu, MessageSquare, Zap, ArrowLeftRight } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface Shortcut {
     keys: string[];
@@ -9,57 +10,59 @@ interface Shortcut {
     category: string;
 }
 
-const shortcuts: Shortcut[] = [
-    // Navigation de base
-    { keys: ['Tab'], description: 'Navigate forward through interactive elements', category: 'Navigation de base' },
-    { keys: ['Shift', 'Tab'], description: 'Navigate backward through interactive elements', category: 'Navigation de base' },
-    { keys: ['Enter'], description: 'Activate buttons and links', category: 'Navigation de base' },
-    { keys: ['Space'], description: 'Activate buttons and checkboxes', category: 'Navigation de base' },
-    { keys: ['Escape'], description: 'Close modals, clear search, close dropdowns', category: 'Navigation de base' },
-    { keys: ['?'], description: 'Show this keyboard shortcuts help', category: 'Navigation de base' },
-    { keys: ['Ctrl', '/'], description: 'Show keyboard shortcuts (alternative)', category: 'Navigation de base' },
+const getShortcuts = (t: any): Shortcut[] => [
+    // Navigation
+    { keys: ['Tab'], description: t('components.keyboard.shortcuts.tab'), category: t('components.keyboard.categories.navigation') },
+    { keys: ['Shift', 'Tab'], description: t('components.keyboard.shortcuts.shiftTab'), category: t('components.keyboard.categories.navigation') },
+    { keys: ['Enter'], description: t('components.keyboard.shortcuts.enter'), category: t('components.keyboard.categories.navigation') },
+    { keys: ['Space'], description: t('components.keyboard.shortcuts.space'), category: t('components.keyboard.categories.navigation') },
+    { keys: ['Escape'], description: t('components.keyboard.shortcuts.escape'), category: t('components.keyboard.categories.navigation') },
+    { keys: ['?'], description: t('components.keyboard.shortcuts.questionMark'), category: t('components.keyboard.categories.navigation') },
+    { keys: ['Ctrl', '/'], description: t('components.keyboard.shortcuts.ctrlSlash'), category: t('components.keyboard.categories.navigation') },
     
-    // Navigation rapide entre pages
-    { keys: ['Alt', 'Home'], description: 'Go to home page', category: 'Navigation entre pages' },
-    { keys: ['Alt', 'P'], description: 'Go to projects page', category: 'Navigation entre pages' },
-    { keys: ['Alt', 'D'], description: 'Go to documents page', category: 'Navigation entre pages' },
-    { keys: ['Alt', 'M'], description: 'Go to meetings page', category: 'Navigation entre pages' },
-    { keys: ['Alt', 'T'], description: 'Go to tasks page', category: 'Navigation entre pages' },
-    { keys: ['Alt', 'U'], description: 'Go to users page (admin)', category: 'Navigation entre pages' },
-    { keys: ['Ctrl', 'B'], description: 'Go back in history', category: 'Navigation entre pages' },
-    { keys: ['Ctrl', '['], description: 'Go back (alternative)', category: 'Navigation entre pages' },
-    { keys: ['Ctrl', ']'], description: 'Go forward in history', category: 'Navigation entre pages' },
+    // Page Navigation
+    { keys: ['Alt', 'Home'], description: t('components.keyboard.shortcuts.altHome'), category: t('components.keyboard.categories.pageNavigation') },
+    { keys: ['Alt', 'P'], description: t('components.keyboard.shortcuts.altP'), category: t('components.keyboard.categories.pageNavigation') },
+    { keys: ['Alt', 'D'], description: t('components.keyboard.shortcuts.altD'), category: t('components.keyboard.categories.pageNavigation') },
+    { keys: ['Alt', 'M'], description: t('components.keyboard.shortcuts.altM'), category: t('components.keyboard.categories.pageNavigation') },
+    { keys: ['Alt', 'T'], description: t('components.keyboard.shortcuts.altT'), category: t('components.keyboard.categories.pageNavigation') },
+    { keys: ['Alt', 'U'], description: t('components.keyboard.shortcuts.altU'), category: t('components.keyboard.categories.pageNavigation') },
+    { keys: ['Ctrl', 'B'], description: t('components.keyboard.shortcuts.ctrlB'), category: t('components.keyboard.categories.pageNavigation') },
+    { keys: ['Ctrl', '['], description: t('components.keyboard.shortcuts.ctrlBracketLeft'), category: t('components.keyboard.categories.pageNavigation') },
+    { keys: ['Ctrl', ']'], description: t('components.keyboard.shortcuts.ctrlBracketRight'), category: t('components.keyboard.categories.pageNavigation') },
     
-    // Séquences Gmail-style (g + lettre)
-    { keys: ['g', 'h'], description: 'Go to home (press g then h)', category: 'Séquences rapides' },
-    { keys: ['g', 'p'], description: 'Go to projects (press g then p)', category: 'Séquences rapides' },
-    { keys: ['g', 'd'], description: 'Go to documents (press g then d)', category: 'Séquences rapides' },
-    { keys: ['g', 'm'], description: 'Go to meetings (press g then m)', category: 'Séquences rapides' },
-    { keys: ['g', 'u'], description: 'Go to users (press g then u)', category: 'Séquences rapides' },
+    // Quick Sequences
+    { keys: ['g', 'h'], description: t('components.keyboard.shortcuts.gh'), category: t('components.keyboard.categories.sequences') },
+    { keys: ['g', 'p'], description: t('components.keyboard.shortcuts.gp'), category: t('components.keyboard.categories.sequences') },
+    { keys: ['g', 'd'], description: t('components.keyboard.shortcuts.gd'), category: t('components.keyboard.categories.sequences') },
+    { keys: ['g', 'm'], description: t('components.keyboard.shortcuts.gm'), category: t('components.keyboard.categories.sequences') },
+    { keys: ['g', 'u'], description: t('components.keyboard.shortcuts.gu'), category: t('components.keyboard.categories.sequences') },
     
-    // Actions rapides
-    { keys: ['Ctrl', 'K'], description: 'Focus search bar (⌘K on Mac, browser safe)', category: 'Actions' },
-    { keys: ['Ctrl', 'N'], description: 'Create new item (context-dependent)', category: 'Actions' },
-    { keys: ['Ctrl', 'Alt', 'N'], description: 'Create new item (fallback if browser blocks Ctrl+N)', category: 'Actions' },
-    { keys: ['Ctrl', 'S'], description: 'Save current form (browser safe)', category: 'Actions' },
-    { keys: ['Ctrl', 'Enter'], description: 'Submit form in modal', category: 'Actions' },
-    { keys: ['Ctrl', 'Shift', 'P'], description: 'Create new project', category: 'Actions' },
-    { keys: ['Ctrl', 'Shift', 'D'], description: 'Create new document', category: 'Actions' },
-    { keys: ['Ctrl', 'Shift', 'M'], description: 'Create new meeting', category: 'Actions' },
+    // Actions
+    { keys: ['Ctrl', 'K'], description: t('components.keyboard.shortcuts.ctrlK'), category: t('components.keyboard.categories.actions') },
+    { keys: ['Ctrl', 'N'], description: t('components.keyboard.shortcuts.ctrlN'), category: t('components.keyboard.categories.actions') },
+    { keys: ['Ctrl', 'Alt', 'N'], description: t('components.keyboard.shortcuts.ctrlAltN'), category: t('components.keyboard.categories.actions') },
+    { keys: ['Ctrl', 'S'], description: t('components.keyboard.shortcuts.ctrlS'), category: t('components.keyboard.categories.actions') },
+    { keys: ['Ctrl', 'Enter'], description: t('components.keyboard.shortcuts.ctrlEnter'), category: t('components.keyboard.categories.actions') },
+    { keys: ['Ctrl', 'Shift', 'P'], description: t('components.keyboard.shortcuts.ctrlShiftP'), category: t('components.keyboard.categories.actions') },
+    { keys: ['Ctrl', 'Shift', 'D'], description: t('components.keyboard.shortcuts.ctrlShiftD'), category: t('components.keyboard.categories.actions') },
+    { keys: ['Ctrl', 'Shift', 'M'], description: t('components.keyboard.shortcuts.ctrlShiftM'), category: t('components.keyboard.categories.actions') },
     
-    // Accessibilité
-    { keys: ['Skip Link'], description: 'Press Tab once to reveal "Skip to main content"', category: 'Accessibilité' },
-    { keys: ['H'], description: 'Navigate by headings (with screen reader)', category: 'Accessibilité' },
-    { keys: ['D'], description: 'Navigate by landmarks (with screen reader)', category: 'Accessibilité' },
+    // Accessibility
+    { keys: ['Skip Link'], description: t('components.keyboard.shortcuts.skipLink'), category: t('components.keyboard.categories.accessibility') },
+    { keys: ['H'], description: t('components.keyboard.shortcuts.heading'), category: t('components.keyboard.categories.accessibility') },
+    { keys: ['D'], description: t('components.keyboard.shortcuts.landmark'), category: t('components.keyboard.categories.accessibility') },
     
-    // Formulaires
-    { keys: ['Tab'], description: 'Move between form fields', category: 'Formulaires' },
-    { keys: ['Enter'], description: 'Submit form (when not in textarea)', category: 'Formulaires' },
-    { keys: ['Arrow Keys'], description: 'Navigate radio buttons and select options', category: 'Formulaires' },
+    // Forms
+    { keys: ['Tab'], description: t('components.keyboard.shortcuts.formTab'), category: t('components.keyboard.categories.forms') },
+    { keys: ['Enter'], description: t('components.keyboard.shortcuts.formEnter'), category: t('components.keyboard.categories.forms') },
+    { keys: ['Arrow Keys'], description: t('components.keyboard.shortcuts.arrowKeys'), category: t('components.keyboard.categories.forms') },
 ];
 
 export const KeyboardShortcutsModal = () => {
+    const { t } = useTranslation('common');
     const [isOpen, setIsOpen] = useState(false);
+    const shortcuts = getShortcuts(t);
 
     useEffect(() => {
         const handleKeyPress = (e: KeyboardEvent) => {
@@ -121,13 +124,13 @@ export const KeyboardShortcutsModal = () => {
                                                 id="shortcuts-title"
                                                 className="text-xl font-semibold text-foreground"
                                             >
-                                                Keyboard Shortcuts
+                                                {t('components.keyboard.title')}
                                             </Dialog.Title>
                                             <Dialog.Description
                                                 id="shortcuts-description"
                                                 className="text-sm text-muted-foreground mt-1"
                                             >
-                                                Navigate TILI Workspace efficiently with keyboard shortcuts
+                                                {t('components.keyboard.description')}
                                             </Dialog.Description>
                                         </div>
                                     </div>
@@ -141,15 +144,19 @@ export const KeyboardShortcutsModal = () => {
 
                                 {/* Content */}
                                 <div className="overflow-y-auto flex-1 pr-2 space-y-6">
-                                    {categories.map((category) => (
+                                    {categories.map((category) => {
+                                        let IconComponent = Menu;
+                                        if (category === t('components.keyboard.categories.navigation')) IconComponent = Navigation;
+                                        if (category === t('components.keyboard.categories.pageNavigation')) IconComponent = ArrowLeftRight;
+                                        if (category === t('components.keyboard.categories.sequences')) IconComponent = Zap;
+                                        if (category === t('components.keyboard.categories.actions')) IconComponent = Search;
+                                        if (category === t('components.keyboard.categories.accessibility')) IconComponent = Menu;
+                                        if (category === t('components.keyboard.categories.forms')) IconComponent = MessageSquare;
+                                        
+                                        return (
                                         <div key={category} className="space-y-3">
                                             <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
-                                                {category === 'Navigation de base' && <Navigation className="h-4 w-4 text-primary" aria-hidden="true" />}
-                                                {category === 'Navigation entre pages' && <ArrowLeftRight className="h-4 w-4 text-primary" aria-hidden="true" />}
-                                                {category === 'Séquences rapides' && <Zap className="h-4 w-4 text-primary" aria-hidden="true" />}
-                                                {category === 'Actions' && <Search className="h-4 w-4 text-primary" aria-hidden="true" />}
-                                                {category === 'Accessibilité' && <Menu className="h-4 w-4 text-primary" aria-hidden="true" />}
-                                                {category === 'Formulaires' && <MessageSquare className="h-4 w-4 text-primary" aria-hidden="true" />}
+                                                <IconComponent className="h-4 w-4 text-primary" aria-hidden="true" />
                                                 {category}
                                             </h3>
                                             <div className="space-y-2">
@@ -182,7 +189,8 @@ export const KeyboardShortcutsModal = () => {
                                                     ))}
                                             </div>
                                         </div>
-                                    ))}
+                                        );
+                                    })}
                                 </div>
 
                                 {/* Footer */}

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { JitsiMeeting } from '@jitsi/react-sdk';
+import { useTranslation } from 'react-i18next';
 import {
     Mic, MicOff, Video, VideoOff,
     Loader2, Layout, Clock, Calendar, X,
@@ -14,6 +15,7 @@ import type { User } from '@/types';
 export const LiveMeeting = () => {
     const navigate = useNavigate();
     const location = useLocation();
+    const { t } = useTranslation('common');
     const { id: scheduledMeetingId } = useParams<{ id?: string }>();
     const [step, setStep] = useState<'setup' | 'meeting'>('setup');
 
@@ -132,10 +134,9 @@ export const LiveMeeting = () => {
 
             // Create meeting record for history/tracking even if solo instant meeting
             const newMeeting = await meetingService.createMeeting({
-                title: title || 'Réunion Instantanée',
+                title: title || t('meetings.liveInstantMeetingTitle'),
                 date: now.toISOString(),
                 participants: participants,
-                minPresenceDuration: 60 // 1 hour implied duration
             });
 
             // Redirect to the new OFFICIAL meeting room with AUTO-JOIN
@@ -154,13 +155,10 @@ export const LiveMeeting = () => {
         setStep('meeting');
     };
 
-    const attendanceRef = useRef<Record<string, { startTime: number; totalSeconds: number; name: string; email?: string }>>({});
-
     // Recording State
     const [isRecording, setIsRecording] = useState(false);
     const mediaRecorderRef = useRef<MediaRecorder | null>(null);
     const chunksRef = useRef<Blob[]>([]);
-    const [uploadingRecording, setUploadingRecording] = useState(false);
 
     const startRecording = async () => {
         try {
@@ -172,14 +170,7 @@ export const LiveMeeting = () => {
             // Check if audio track exists
             const audioTracks = stream.getAudioTracks();
             if (audioTracks.length === 0) {
-                const proceed = confirm(
-                    "⚠️ ATTENTION : Aucune piste audio détectée !\n\n" +
-                    "Pour que l'analyse fonctionne, vous devez :\n" +
-                    "1. Annuler cet enregistrement\n" +
-                    "2. Cliquer à nouveau sur 'Enregistrer & Analyser'\n" +
-                    "3. Dans la fenêtre du navigateur, cocher 'Partager l'audio du système'\n\n" +
-                    "Voulez-vous continuer quand même ? (L'analyse sera vide)"
-                );
+                const proceed = confirm(t('meetings.liveNoAudioTrack'));
 
                 if (!proceed) {
                     stream.getTracks().forEach(track => track.stop());
@@ -200,33 +191,18 @@ export const LiveMeeting = () => {
                 stream.getTracks().forEach(track => track.stop());
 
                 const blob = new Blob(chunksRef.current, { type: 'video/webm' });
-                const file = new File([blob], `recording-${Date.now()}.webm`, { type: 'video/webm' });
 
-                // Upload immediately
-                if (scheduledMeetingId) {
-                    setUploadingRecording(true);
-                    try {
-                        await meetingService.uploadAudio(scheduledMeetingId, file, true);
-                        alert("✅ L'enregistrement a été envoyé avec succès !\n\nL'analyse AI sera disponible dans les détails de la réunion. Si aucune piste audio n'a été détectée, un résumé structuré basé sur les infos de la réunion sera généré.");
-                    } catch (e: any) {
-                        console.error("Erreur lors de l'envoi de l'enregistrement", e);
-                        const errorMsg = e?.response?.data?.error?.message || e?.message || "Erreur inconnue";
+                // Download the recording locally
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `recording-${Date.now()}.webm`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
 
-                        if (errorMsg.includes("no audio track")) {
-                            alert(
-                                "⚠️ Attention : Aucune piste audio dans l'enregistrement !\n\n" +
-                                "Pour le prochain enregistrement :\n" +
-                                "1. Cliquez sur 'Enregistrer & Analyser'\n" +
-                                "2. Dans la fenêtre du navigateur, cochez 'Partager l'audio du système'\n" +
-                                "3. Sélectionnez l'onglet de la réunion\n\nUn résumé structuré sera quand même généré."
-                            );
-                        } else {
-                            alert(`Erreur lors de l'envoi : ${errorMsg}`);
-                        }
-                    } finally {
-                        setUploadingRecording(false);
-                    }
-                }
+                alert(t('meetings.liveRecordingDownloaded'));
                 setIsRecording(false);
             };
 
@@ -242,7 +218,7 @@ export const LiveMeeting = () => {
 
         } catch (err) {
             console.error("Error starting record", err);
-            alert("Impossible de démarrer l'enregistrement. Assurez-vous d'autoriser le partage d'écran.");
+            alert(t('meetings.liveRecordingError'));
             setIsRecording(false);
         }
     };
@@ -256,35 +232,8 @@ export const LiveMeeting = () => {
     const handleEndMeeting = async () => {
         if (!scheduledMeetingId) return;
 
-        if (confirm("Voulez-vous vraiment terminer cette réunion pour tout le monde ? Elle ne sera plus accessible.")) {
-            // Finalize attendance
-            const now = Date.now();
-            const attendanceData: Record<string, { status: string; duration: number }> = {};
-
-            Object.values(attendanceRef.current).forEach((p: { startTime: number; totalSeconds: number; name: string; email?: string }) => {
-                let duration = p.totalSeconds;
-                if (p.startTime > 0) {
-                    duration += (now - p.startTime) / 1000;
-                }
-
-                // Use email if available (try to match from availableUsers or p.email), else name
-                const key = p.email || p.name || 'Inconnu';
-                attendanceData[key] = {
-                    status: duration > 10 ? 'PRESENT' : 'ABSENT', // threshold 10s
-                    duration: Math.round(duration)
-                };
-            });
-
-            // Ensure organizer (me) is present if not captured
-            if (currentUser?.email && !attendanceData[currentUser.email]) {
-                attendanceData[currentUser.email] = { status: 'PRESENT', duration: 3600 }; // Fallback
-            }
-
+        if (confirm(t('meetings.liveEndMeetingConfirm'))) {
             try {
-                await meetingService.updateMeeting(scheduledMeetingId, {
-                    status: 'COMPLETED',
-                    attendance: JSON.stringify(attendanceData)
-                });
                 navigate('/meetings');
             } catch (err) {
                 console.error("Failed to end meeting", err);
@@ -299,33 +248,6 @@ export const LiveMeeting = () => {
     };
 
     const handleApiReady = (apiObj: any) => {
-        // Track Local User
-        const localId = 'local';
-        attendanceRef.current[localId] = {
-            startTime: Date.now(),
-            totalSeconds: 0,
-            name: currentUser?.nom ? `${currentUser.prenom} ${currentUser.nom}` : 'Moi',
-            email: currentUser?.email
-        };
-
-        apiObj.on('participantJoined', (participant: any) => {
-            // participant: { id, displayName }
-            attendanceRef.current[participant.id] = {
-                startTime: Date.now(),
-                totalSeconds: 0,
-                name: participant.displayName || 'Invité',
-                // we don't easily get email from Jitsi without extra config, so we rely on name matching or just name
-            };
-        });
-
-        apiObj.on('participantLeft', (participant: any) => {
-            const p = attendanceRef.current[participant.id];
-            if (p) {
-                p.totalSeconds += (Date.now() - p.startTime) / 1000;
-                p.startTime = 0;
-            }
-        });
-
         apiObj.on('videoConferenceLeft', () => {
             navigate('/meetings');
         });
@@ -340,8 +262,8 @@ export const LiveMeeting = () => {
 
     const LoadingSpinner = () => (
         <div className="flex flex-col items-center justify-center h-full space-y-4">
-            <Loader2 className="w-12 h-12 text-blue-500 animate-spin" />
-            <p className="text-slate-400 font-medium animate-pulse">Connexion à la salle sécurisée...</p>
+            <Loader2 className="w-12 h-12 text-primary animate-spin" />
+            <p className="text-slate-400 font-medium animate-pulse">{t('meetings.liveConnecting')}</p>
         </div>
     );
 
@@ -368,12 +290,12 @@ export const LiveMeeting = () => {
                             </button>
                             <div>
                                 <h1 className="text-lg font-bold text-white tracking-tight">
-                                    {title || 'Nouvelle Réunion'}
+                                    {title || t('meetings.liveNewMeeting')}
                                 </h1>
                                 <div className="flex items-center gap-3 text-xs text-slate-400">
                                     <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20">
                                         <ShieldCheck className="w-3 h-3" />
-                                        Sécurisé
+                                        {t('meetings.liveSecure')}
                                     </span>
                                     {scheduledMeetingDate && (
                                         <span className="flex items-center gap-1">
@@ -402,12 +324,13 @@ export const LiveMeeting = () => {
                                         {currentUser?.prenom?.[0]}{currentUser?.nom?.[0]}
                                     </div>
 
-                                    <p className="relative z-10 text-slate-400 text-sm font-medium mb-8">
-                                        La caméra est simulée pour la configuration
-                                    </p>
+                                    <div>
+                                        <p className="text-slate-400 text-sm font-medium mb-8">
+                                            {t('meetings.liveCameraSimulated')}
+                                        </p>
 
-                                    {/* Quick Toggles */}
-                                    <div className="relative z-10 flex gap-4">
+                                        {/* Quick Toggles */}
+                                        <div className="relative z-10 flex gap-4">
                                         <button
                                             onClick={() => setIsMuted(!isMuted)}
                                             className={`p-4 rounded-2xl transition-all duration-300 ${isMuted ? 'bg-red-500/20 text-red-400 border-red-500/30' : 'bg-white/10 text-white hover:bg-white/20 border-white/10'} border shadow-lg backdrop-blur-sm`}
@@ -426,9 +349,9 @@ export const LiveMeeting = () => {
                                 {/* 2. Join Options */}
                                 <div className="space-y-8 pl-0 lg:pl-8">
                                     <div>
-                                        <h2 className="text-3xl font-bold text-white mb-2">Prêt à rejoindre ?</h2>
+                                        <h2 className="text-3xl font-bold text-white mb-2">{t('meetings.liveReady')}</h2>
                                         <p className="text-slate-400 text-lg">
-                                            Vérifiez votre audio et vidéo avant d'entrer dans la salle <span className="text-blue-400 font-semibold">{title}</span>.
+                                            {t('meetings.liveCheckAudioVideo', { title: <span className="text-blue-400 font-semibold">{title}</span> })}
                                         </p>
                                     </div>
 
@@ -445,11 +368,11 @@ export const LiveMeeting = () => {
                                                             <Users size={18} />
                                                         </div>
                                                         <div>
-                                                            <span className="block font-medium text-sm text-slate-200">Inviter des participants</span>
+                                                            <span className="block font-medium text-sm text-slate-200">{t('meetings.liveInviteParticipants')}</span>
                                                             <span className="text-xs text-slate-400">
                                                                 {selectedUsers.length > 0
-                                                                    ? `${selectedUsers.length} sélectionné(s)`
-                                                                    : 'Sélectionner depuis l\'annuaire'}
+                                                                    ? t('meetings.liveSelectedCount', { count: selectedUsers.length })
+                                                                    : t('meetings.liveSelectFromDirectory')}
                                                             </span>
                                                         </div>
                                                     </div>
@@ -464,7 +387,7 @@ export const LiveMeeting = () => {
                                                                 type="text"
                                                                 value={searchQuery}
                                                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                                                placeholder="Rechercher un nom..."
+                                                                placeholder={t('meetings.liveSearchName')}
                                                                 className="w-full bg-slate-900 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500/50"
                                                                 autoFocus
                                                             />
@@ -525,7 +448,7 @@ export const LiveMeeting = () => {
                                             <button
                                                 onClick={startMeeting}
                                                 disabled={loadingStatus.meeting === 'pending'}
-                                                className={`w-full py-4 px-6 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white rounded-2xl font-semibold shadow-lg shadow-blue-500/25 transition-all duration-300 transform hover:scale-[1.02] flex items-center justify-center gap-3 ${loadingStatus.meeting === 'pending' ? 'opacity-70 cursor-wait' : ''}`}
+                                                className={`w-full py-4 px-6 bg-primary hover:bg-primary/90 active:bg-primary/80 text-primary-foreground rounded-2xl font-semibold shadow-lg shadow-primary/25 transition-all duration-300 transform hover:scale-[1.02] flex items-center justify-center gap-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${loadingStatus.meeting === 'pending' ? 'opacity-70 cursor-wait' : ''}`}
                                             >
                                                 {loadingStatus.meeting === 'pending' ? (
                                                     <>
@@ -549,6 +472,7 @@ export const LiveMeeting = () => {
                                 </div>
                             </div>
                         </div>
+                        </div>
                     ) : (
                         // MEETING VIEW (Jitsi)
                         <div className="w-full h-full rounded-3xl overflow-hidden border border-white/10 shadow-2xl relative bg-slate-900 flex flex-col">
@@ -558,10 +482,10 @@ export const LiveMeeting = () => {
                                     <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-500/10 rounded-full border border-blue-500/20">
                                         <ShieldCheck className="w-3.5 h-3.5 text-blue-400" />
                                         <span className="text-xs text-blue-200 font-medium whitespace-nowrap">
-                                            Salle : <span className="font-mono ml-1 select-all">Tili-{scheduledMeetingId}</span>
+                                            {t('meetings.liveRoomLabel')}<span className="font-mono ml-1 select-all">Tili-{scheduledMeetingId}</span>
                                         </span>
                                     </div>
-                                    <span className="text-[10px] text-slate-500 hidden sm:inline-block leading-tight max-w-[200px]">Si "Waiting for host", cliquez sur "Je suis l'hôte" et connectez-vous.</span>
+                                    <span className="text-[10px] text-slate-500 hidden sm:inline-block leading-tight max-w-[200px]">{t('meetings.liveWaitingForHost')}</span>
                                 </div>
 
                                 <div className="flex items-center gap-3">
@@ -569,25 +493,20 @@ export const LiveMeeting = () => {
                                     {isOrganizer && (
                                         <button
                                             onClick={isRecording ? stopRecording : startRecording}
-                                            disabled={uploadingRecording}
                                             className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-all ${isRecording
                                                 ? 'bg-red-500/20 border-red-500/50 text-red-200 animate-pulse'
                                                 : 'bg-slate-700/50 border-white/10 text-slate-300 hover:bg-slate-700'
-                                                } ${uploadingRecording ? 'opacity-50 cursor-wait' : ''}`}
+                                                }`}
                                         >
-                                            {uploadingRecording ? (
-                                                <Loader2 className="w-4 h-4 animate-spin" />
-                                            ) : isRecording ? (
+                                            {isRecording ? (
                                                 <StopCircle className="w-4 h-4" />
                                             ) : (
                                                 <Disc className="w-4 h-4" />
                                             )}
                                             <span className="text-xs font-semibold">
-                                                {uploadingRecording
-                                                    ? 'Envoi...'
-                                                    : isRecording
-                                                        ? 'Stop Enregistrement'
-                                                        : 'Enregistrer & Analyser'
+                                                {isRecording
+                                                    ? 'Stop Enregistrement'
+                                                    : 'Enregistrer'
                                                 }
                                             </span>
                                         </button>

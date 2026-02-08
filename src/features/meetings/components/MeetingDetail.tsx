@@ -3,13 +3,15 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { meetingService } from '../services/meetingService';
 import { documentService } from '../../documents/documentService';
+import { userService } from '../../users/userService';
 import type { Meeting } from '../types';
 import type { TiliDocument } from '@/types/documents';
 import { DocumentType } from '@/types/documents';
 import { useAuthStore } from '../../auth/useAuthStore';
-import { Loader2, ArrowLeft, Calendar, FileText, CheckSquare, ListVideo, AlertCircle, Trash2, Users, Pencil, Plus, X, Check, Paperclip, Download, Upload } from 'lucide-react';
+import { Loader2, ArrowLeft, Calendar, Clock, FileText, CheckSquare, ListVideo, AlertCircle, Trash2, Users, Pencil, Plus, X, Check, Paperclip, Download, Upload } from 'lucide-react';
 import { toast } from 'sonner';
 import ReactMarkdown from 'react-markdown'; // Assuming standard markdown renderer or just plain text
+import { useTranslation } from 'react-i18next';
 
 // Simple Markdown renderer fallback if package not present (though likely is or I should install)
 // I will assume simple rendering for now or basic text to be safe in hackathon mode without verifying package.json deeply again.
@@ -46,7 +48,14 @@ export const MeetingDetail: React.FC = () => {
     const [editTime, setEditTime] = useState('');
     const [editParticipants, setEditParticipants] = useState<string[]>([]);
     const [newParticipantEmail, setNewParticipantEmail] = useState('');
+    const [availableUsers, setAvailableUsers] = useState<{ id: string; email: string; prenom: string; nom: string }[]>([]);
+    const [showUserSuggestions, setShowUserSuggestions] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
+    const { t } = useTranslation('common');
+
+    useEffect(() => {
+        userService.getAll().then(users => setAvailableUsers(users.filter(u => u.isActive))).catch(() => {});
+    }, []);
 
     useEffect(() => {
         if (id) {
@@ -100,11 +109,11 @@ export const MeetingDetail: React.FC = () => {
         } catch (e: any) {
             console.error(e);
             if (e.response?.status === 403) {
-                setError("Accès refusé. Vous n'êtes pas invité à cette réunion.");
+                setError(t('meetings.detail.accessDenied'));
             } else if (e.response?.status === 404) {
-                setError("Réunion introuvable.");
+                setError(t('meetings.detail.notFound'));
             } else {
-                setError("Une erreur est survenue lors du chargement.");
+                setError(t('meetings.detail.loadError'));
             }
         } finally {
             setLoading(false);
@@ -154,19 +163,19 @@ export const MeetingDetail: React.FC = () => {
             setShowAddDocModal(false);
         } catch (err) {
             console.error('Failed to add document:', err);
-            alert('Erreur lors de l\'ajout du document');
+            alert(t('meetings.detail.addDocError'));
         }
     };
 
     const handleRemoveDocument = async (documentId: string) => {
         if (!meeting) return;
-        if (!confirm('Êtes-vous sûr de vouloir retirer ce document de la réunion ?')) return;
+        if (!confirm(t('meetings.detail.removeDocConfirm'))) return;
         try {
             await meetingService.removeDocument(meeting.id, documentId);
             loadMeetingDocuments(meeting.id);
         } catch (err) {
             console.error('Failed to remove document:', err);
-            alert('Erreur lors du retrait du document');
+            alert(t('meetings.detail.removeDocError'));
         }
     };
 
@@ -190,7 +199,7 @@ export const MeetingDetail: React.FC = () => {
 
     const handleUploadNewDocument = async () => {
         if (!uploadFile || !uploadName || !meeting) {
-            toast.error('Veuillez sélectionner un fichier et entrer un nom');
+            toast.error(t('meetings.detail.uploadMissingFields'));
             return;
         }
 
@@ -200,7 +209,7 @@ export const MeetingDetail: React.FC = () => {
                 name: uploadName,
                 type: uploadType,
                 projectId: '',
-                description: `Document associé à la réunion: ${meeting.title}`,
+                description: t('meetings.detail.uploadDocDesc', { title: meeting.title }),
             });
             
             // Associate to meeting
@@ -216,10 +225,10 @@ export const MeetingDetail: React.FC = () => {
             setShowUploadForm(false);
             if (fileInputRef.current) fileInputRef.current.value = '';
             
-            toast.success('Document uploadé et associé à la réunion');
+            toast.success(t('meetings.detail.uploadSuccess'));
         } catch (error) {
             console.error('Failed to upload document:', error);
-            toast.error('Échec de l\'upload du document');
+            toast.error(t('meetings.detail.uploadError'));
         } finally {
             setUploadingDoc(false);
         }
@@ -237,10 +246,10 @@ export const MeetingDetail: React.FC = () => {
             });
             setShowEditModal(false);
             loadMeeting(meeting.id);
-            alert('Réunion mise à jour avec succès. Un email a été envoyé aux participants.');
+            alert(t('meetings.detail.editSuccess'));
         } catch (err) {
             console.error('Failed to update meeting:', err);
-            alert('Échec de la mise à jour de la réunion.');
+            alert(t('meetings.detail.editError'));
         } finally {
             setIsSaving(false);
         }
@@ -249,7 +258,7 @@ export const MeetingDetail: React.FC = () => {
     const addParticipant = () => {
         if (newParticipantEmail && !editParticipants.includes(newParticipantEmail)) {
             if (!newParticipantEmail.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
-                alert('Veuillez entrer une adresse email valide.');
+                alert(t('meetings.detail.invalidEmail'));
                 return;
             }
             setEditParticipants([...editParticipants, newParticipantEmail]);
@@ -260,7 +269,7 @@ export const MeetingDetail: React.FC = () => {
     const removeParticipant = (email: string) => {
         // Organizer cannot be removed (assuming first is organizer)
         if (editParticipants.indexOf(email) === 0) {
-            alert("L'organisateur ne peut pas être retiré.");
+            alert(t('meetings.detail.organizerCannotBeRemoved'));
             return;
         }
         setEditParticipants(editParticipants.filter(p => p !== email));
@@ -268,46 +277,46 @@ export const MeetingDetail: React.FC = () => {
 
     const handleFinalizeWithoutAudio = async () => {
         if (!meeting) return;
-        if (!confirm('Voulez-vous finaliser cette réunion sans enregistrement audio ? Un résumé AI sera généré avec les informations disponibles.')) {
+        if (!confirm(t('meetings.detail.finalizeWithoutAudioConfirm'))) {
             return;
         }
         try {
-            toast.info('Finalisation en cours...');
+            toast.info(t('meetings.detail.finalizing'));
             await meetingService.finalizeWithoutAudio(meeting.id);
-            toast.success('Réunion finalisée avec succès !');
+            toast.success(t('meetings.detail.finalizeSuccess'));
             loadMeeting(meeting.id);
         } catch (error) {
             console.error('Failed to finalize meeting:', error);
-            toast.error('Échec de la finalisation de la réunion');
+            toast.error(t('meetings.detail.finalizeError'));
         }
     };
 
-    if (loading) return <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 text-blue-600 animate-spin" /></div>;
+    if (loading) return <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 text-primary animate-spin" /></div>;
 
     if (error) return (
         <div className="max-w-xl mx-auto py-12 text-center px-4">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-100 mb-4">
-                <AlertCircle className="w-8 h-8 text-red-600" />
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-destructive/10 mb-4">
+                <AlertCircle className="w-8 h-8 text-destructive" />
             </div>
-            <h2 className="text-2xl font-bold text-slate-900 mb-2">Accès Restreint</h2>
-            <p className="text-slate-500 mb-6">{error}</p>
-            <Link to="/meetings" className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">
-                Retour au tableau de bord
+            <h2 className="text-2xl font-bold text-foreground mb-2">{t('meetings.detail.accessRestrictedTitle')}</h2>
+            <p className="text-muted-foreground mb-6">{error}</p>
+            <Link to="/meetings" className="inline-flex items-center justify-center px-6 py-3 text-base font-medium rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                {t('meetings.detail.backToDashboard')}
             </Link>
         </div>
     );
 
-    if (!meeting) return <div>Meeting not found</div>;
+    if (!meeting) return <div className="text-center py-12 text-muted-foreground">{t('meetings.detail.notFound')}</div>;
 
     if (meeting.status === 'FAILED') {
         return (
             <div className="max-w-5xl mx-auto py-12 text-center">
-                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-100 mb-4">
-                    <AlertCircle className="w-8 h-8 text-red-600" />
+                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-destructive/10 mb-4">
+                    <AlertCircle className="w-8 h-8 text-destructive" />
                 </div>
-                <h2 className="text-2xl font-bold text-slate-900 mb-2">Processing Failed</h2>
-                <p className="text-slate-500 mb-6">Something went wrong while processing this meeting.</p>
-                <Link to="/meetings" className="text-blue-600 hover:underline">Back to Meetings</Link>
+                <h2 className="text-2xl font-bold text-foreground mb-2">{t('meetings.detail.processingFailedTitle')}</h2>
+                <p className="text-muted-foreground mb-6">{t('meetings.detail.processingFailedDesc')}</p>
+                <Link to="/meetings" className="text-primary hover:underline">{t('meetings.detail.backToMeetings')}</Link>
             </div>
         );
     }
@@ -331,33 +340,33 @@ export const MeetingDetail: React.FC = () => {
 
         return (
             <div className="max-w-4xl mx-auto pb-12">
-                <Link to="/meetings" className="inline-flex items-center gap-2 text-slate-600 hover:text-slate-900 mb-6">
+                <Link to="/meetings" className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-6 transition-colors">
                     <ArrowLeft className="w-4 h-4" />
-                    Back to Meetings
+                    Retour aux réunions
                 </Link>
 
-                <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                <div className="bg-card rounded-2xl shadow-sm border border-border/80 overflow-hidden">
                     {/* Header */}
-                    <div className="bg-gradient-to-r from-blue-600 to-purple-600 px-8 py-6">
+                    <div className="bg-primary px-8 py-6">
                         <div className="flex items-start justify-between">
                             <div className="flex-1">
                                 <div className="flex items-center gap-3 mb-2">
-                                    <span className="px-3 py-1 bg-white/20 backdrop-blur rounded-full text-xs font-semibold text-white uppercase">
-                                        📅 Planifiée
+                                    <span className="px-3 py-1 bg-primary-foreground/20 backdrop-blur rounded-full text-xs font-semibold text-primary-foreground uppercase">
+                                        Planifiée
                                     </span>
                                     {isPast && (
-                                        <span className="px-3 py-1 bg-red-500/80 backdrop-blur rounded-full text-xs font-semibold text-white uppercase">
-                                            ⚠️ Passée
+                                        <span className="px-3 py-1 bg-destructive/80 backdrop-blur rounded-full text-xs font-semibold text-primary-foreground uppercase">
+                                            Passée
                                         </span>
                                     )}
                                     {isToday && !isPast && (
-                                        <span className="px-3 py-1 bg-green-500/80 backdrop-blur rounded-full text-xs font-semibold text-white uppercase animate-pulse">
-                                            🔴 Aujourd'hui
+                                        <span className="px-3 py-1 bg-emerald-600/80 backdrop-blur rounded-full text-xs font-semibold text-primary-foreground uppercase animate-pulse">
+                                            Aujourd’hui
                                         </span>
                                     )}
                                 </div>
-                                <h1 className="text-3xl font-bold text-white mb-2">{meeting.title}</h1>
-                                <div className="flex items-center gap-4 text-white/90 text-sm">
+                                <h1 className="text-3xl font-bold text-primary-foreground mb-2">{meeting.title}</h1>
+                                <div className="flex items-center gap-4 text-primary-foreground/90 text-sm">
                                     <div className="flex items-center gap-2">
                                         <Calendar className="w-4 h-4" />
                                         {meetingDate.toLocaleDateString('fr-FR', {
@@ -368,7 +377,8 @@ export const MeetingDetail: React.FC = () => {
                                         })}
                                     </div>
                                     <div className="flex items-center gap-2">
-                                        🕐 {meetingDate.toLocaleTimeString('fr-FR', {
+                                        <Clock className="w-4 h-4" />
+                                        {meetingDate.toLocaleTimeString('fr-FR', {
                                             hour: '2-digit',
                                             minute: '2-digit'
                                         })}
@@ -382,24 +392,24 @@ export const MeetingDetail: React.FC = () => {
                     <div className="p-8 space-y-6">
                         {/* Participants */}
                         <div>
-                            <h2 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
-                                <Users className="w-5 h-5 text-blue-600" />
+                            <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+                                <Users className="w-5 h-5 text-primary" />
                                 Participants Invités ({participants.length})
                             </h2>
-                            <div className="bg-slate-50 rounded-xl border border-slate-200 divide-y divide-slate-200">
+                            <div className="bg-muted/50 rounded-xl border border-border divide-y divide-border">
                                 {participants.length === 0 ? (
-                                    <div className="p-4 text-slate-500 text-center">Aucun participant invité</div>
+                                    <div className="p-4 text-muted-foreground text-center">Aucun participant invité</div>
                                 ) : (
                                     participants.map((email, index) => (
                                         <div key={index} className="p-4 flex items-center gap-3">
-                                            <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-                                                <span className="text-blue-600 font-semibold text-sm">
+                                            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                                                <span className="text-primary font-semibold text-sm">
                                                     {email.charAt(0).toUpperCase()}
                                                 </span>
                                             </div>
                                             <div>
-                                                <div className="font-medium text-slate-900">{email}</div>
-                                                <div className="text-xs text-slate-500">{index === 0 ? 'Organisateur' : 'Invité'}</div>
+                                                <div className="font-medium text-foreground">{email}</div>
+                                                <div className="text-xs text-muted-foreground">{index === 0 ? 'Organisateur' : 'Invité'}</div>
                                             </div>
                                         </div>
                                     ))
@@ -408,16 +418,16 @@ export const MeetingDetail: React.FC = () => {
                         </div>
 
                         {/* Status Info */}
-                        <div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
+                        <div className="bg-primary/5 border border-primary/20 rounded-xl p-6">
                             <div className="flex items-start gap-4">
-                                <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
-                                    <Calendar className="w-6 h-6 text-blue-600" />
+                                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                                    <Calendar className="w-6 h-6 text-primary" />
                                 </div>
                                 <div className="flex-1">
-                                    <h3 className="font-semibold text-blue-900 mb-2">
+                                    <h3 className="font-semibold text-foreground mb-2">
                                         {isPast ? "Cette réunion est passée" : "Réunion à venir"}
                                     </h3>
-                                    <p className="text-sm text-blue-700">
+                                    <p className="text-sm text-muted-foreground">
                                         {isPast ? (
                                             "Cette réunion était planifiée mais n'a pas encore été enregistrée. Vous pouvez la démarrer maintenant ou la supprimer."
                                         ) : (
@@ -434,7 +444,7 @@ export const MeetingDetail: React.FC = () => {
                         {/* Actions */}
                         <div className="flex gap-3 pt-4">
                             {(meeting.status as string) === 'COMPLETED' ? (
-                                <div className="flex-1 bg-slate-100 text-slate-500 font-semibold py-3 px-6 rounded-xl flex items-center justify-center gap-2 cursor-not-allowed border border-slate-200">
+                                <div className="flex-1 bg-muted text-muted-foreground font-semibold py-3 px-6 rounded-xl flex items-center justify-center gap-2 cursor-not-allowed border border-border">
                                     <Check className="w-5 h-5" />
                                     Réunion terminée
                                 </div>
@@ -442,9 +452,9 @@ export const MeetingDetail: React.FC = () => {
                                 (!isPast || isToday) && (
                                     <Link
                                         to={`/meet/${meeting.id}`}
-                                        className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-xl transition-all flex items-center justify-center gap-2"
+                                        className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-3 px-6 rounded-xl transition-colors flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                                     >
-                                        🎥 Rejoindre la Réunion
+                                        Rejoindre la Réunion
                                     </Link>
                                 )
                             )}
@@ -454,7 +464,7 @@ export const MeetingDetail: React.FC = () => {
                                     {isPast && meeting.status === 'SCHEDULED' && (
                                         <button
                                             onClick={handleFinalizeWithoutAudio}
-                                            className="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-xl transition-all flex items-center justify-center gap-2"
+                                            className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3 px-6 rounded-xl transition-colors flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                                         >
                                             <CheckSquare className="w-4 h-4" />
                                             Finaliser sans audio
@@ -463,7 +473,7 @@ export const MeetingDetail: React.FC = () => {
                                     {!isPast && (
                                         <button
                                             onClick={() => setShowEditModal(true)}
-                                            className="bg-white hover:bg-slate-50 text-slate-700 font-semibold py-3 px-6 rounded-xl transition-all flex items-center justify-center gap-2 border border-slate-200"
+                                            className="bg-card hover:bg-accent text-foreground font-semibold py-3 px-6 rounded-xl transition-colors flex items-center justify-center gap-2 border border-border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                                         >
                                             <Pencil className="w-4 h-4" />
                                             Modifier
@@ -471,19 +481,19 @@ export const MeetingDetail: React.FC = () => {
                                     )}
                                     <button
                                         onClick={async () => {
-                                            if (confirm('Êtes-vous sûr de vouloir supprimer cette réunion planifiée ? Tous les participants seront notifiés par email.')) {
+                                            if (confirm(t('meetings.detail.editDeleteConfirm'))) {
                                                 try {
                                                     await meetingService.deleteMeeting(meeting.id);
                                                     window.location.href = '/meetings';
                                                 } catch (error) {
-                                                    alert('Erreur lors de la suppression');
+                                                    alert(t('meetings.detail.editDeleteError'));
                                                 }
                                             }
                                         }}
-                                        className="bg-red-50 hover:bg-red-100 text-red-600 font-semibold py-3 px-6 rounded-xl transition-all flex items-center justify-center gap-2 border border-red-200"
+                                        className="bg-destructive/10 hover:bg-destructive/20 text-destructive font-semibold py-3 px-6 rounded-xl transition-colors flex items-center justify-center gap-2 border border-destructive/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                                     >
                                         <Trash2 className="w-4 h-4" />
-                                        Supprimer
+                                        {t('meetings.detail.delete')}
                                     </button>
                                 </>
                             )}
@@ -494,71 +504,123 @@ export const MeetingDetail: React.FC = () => {
                 {/* Edit Modal */}
                 {showEditModal && (
                     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-                        <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden animate-in fade-in zoom-in duration-200">
-                            <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-                                <h3 className="text-xl font-bold text-slate-800">Modifier la réunion</h3>
-                                <button onClick={() => setShowEditModal(false)} className="p-2 hover:bg-slate-200 rounded-lg">
-                                    <X className="w-5 h-5 text-slate-500" />
+                        <div className="bg-card rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden animate-in fade-in zoom-in duration-200">
+                            <div className="p-6 border-b border-border flex justify-between items-center bg-muted/50">
+                                <h3 className="text-xl font-bold text-foreground">{t('meetings.detail.editTitle')}</h3>
+                                <button onClick={() => setShowEditModal(false)} className="p-2 hover:bg-accent rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                                    <X className="w-5 h-5 text-muted-foreground" />
                                 </button>
                             </div>
 
                             <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
                                 <div>
-                                    <label className="block text-sm font-semibold text-slate-700 mb-1">Titre de la réunion</label>
+                                    <label htmlFor="edit-title" className="block text-sm font-semibold text-foreground mb-1">{t('meetings.detail.editTitleLabel')}</label>
                                     <input
+                                        id="edit-title"
                                         type="text"
                                         value={editTitle}
                                         onChange={(e) => setEditTitle(e.target.value)}
-                                        className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none"
-                                        placeholder="Ex: Weekly Sync"
+                                        className="w-full px-4 py-2.5 rounded-xl bg-background border border-input text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-shadow"
+                                        placeholder={t('meetings.detail.editTitlePlaceholder')}
                                     />
                                 </div>
 
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
-                                        <label className="block text-sm font-semibold text-slate-700 mb-1">Date</label>
+                                        <label htmlFor="edit-date" className="block text-sm font-semibold text-foreground mb-1">{t('meetings.detail.editDateLabel')}</label>
                                         <input
+                                            id="edit-date"
                                             type="date"
                                             value={editDate}
                                             onChange={(e) => setEditDate(e.target.value)}
-                                            className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none"
+                                            className="w-full px-4 py-2.5 rounded-xl bg-background border border-input text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-shadow"
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-semibold text-slate-700 mb-1">Heure</label>
+                                        <label htmlFor="edit-time" className="block text-sm font-semibold text-foreground mb-1">{t('meetings.detail.editTimeLabel')}</label>
                                         <input
+                                            id="edit-time"
                                             type="time"
                                             value={editTime}
                                             onChange={(e) => setEditTime(e.target.value)}
-                                            className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none"
+                                            className="w-full px-4 py-2.5 rounded-xl bg-background border border-input text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-shadow"
                                         />
                                     </div>
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-semibold text-slate-700 mb-1">Invités</label>
-                                    <div className="flex gap-2 mb-2">
-                                        <input
-                                            type="email"
-                                            value={newParticipantEmail}
-                                            onChange={(e) => setNewParticipantEmail(e.target.value)}
-                                            onKeyPress={(e) => e.key === 'Enter' && addParticipant()}
-                                            className="flex-1 px-4 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none"
-                                            placeholder="email@example.com"
-                                        />
-                                        <button
-                                            onClick={addParticipant}
-                                            className="p-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors"
-                                        >
-                                            <Plus className="w-5 h-5" />
-                                        </button>
+                                    <label htmlFor="edit-participants" className="block text-sm font-semibold text-foreground mb-1">{t('meetings.detail.editGuestsLabel')}</label>
+                                    <div className="relative mb-2">
+                                        <div className="flex gap-2">
+                                            <input
+                                                id="edit-participants"
+                                                type="text"
+                                                value={newParticipantEmail}
+                                                onChange={(e) => {
+                                                    setNewParticipantEmail(e.target.value);
+                                                    setShowUserSuggestions(true);
+                                                }}
+                                                onFocus={() => setShowUserSuggestions(true)}
+                                                onKeyPress={(e) => e.key === 'Enter' && addParticipant()}
+                                                className="flex-1 px-4 py-2.5 rounded-xl bg-background border border-input text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-shadow"
+                                                placeholder={t('meetings.detail.editSearchPlaceholder')}
+                                                role="combobox"
+                                                aria-expanded={showUserSuggestions}
+                                                aria-autocomplete="list"
+                                                autoComplete="off"
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={addParticipant}
+                                                className="p-2.5 bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                                aria-label={t('meetings.detail.editAddParticipantAria')}
+                                            >
+                                                <Plus className="w-5 h-5" />
+                                            </button>
+                                        </div>
+                                        {showUserSuggestions && (() => {
+                                            const filtered = availableUsers.filter(u => {
+                                                if (editParticipants.includes(u.email)) return false;
+                                                if (!newParticipantEmail) return true;
+                                                const s = newParticipantEmail.toLowerCase();
+                                                return u.email.toLowerCase().includes(s) || u.nom.toLowerCase().includes(s) || u.prenom.toLowerCase().includes(s);
+                                            });
+                                            if (filtered.length === 0) return null;
+                                            return (
+                                                <ul role="listbox" className="absolute z-50 w-full mt-1 bg-popover border border-border rounded-xl shadow-lg max-h-36 overflow-y-auto">
+                                                    {filtered.map((u) => (
+                                                        <li key={u.id} role="option" aria-selected={false}>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => {
+                                                                    if (!editParticipants.includes(u.email)) {
+                                                                        setEditParticipants([...editParticipants, u.email]);
+                                                                    }
+                                                                    setNewParticipantEmail('');
+                                                                    setShowUserSuggestions(false);
+                                                                }}
+                                                                className="w-full px-3 py-2.5 text-left hover:bg-accent flex items-center gap-3 transition-colors"
+                                                            >
+                                                                <span className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                                                                    <span className="text-primary font-semibold text-xs">{u.prenom.charAt(0)}{u.nom.charAt(0)}</span>
+                                                                </span>
+                                                                <span className="min-w-0">
+                                                                    <span className="block text-sm font-medium text-foreground truncate">{u.prenom} {u.nom}</span>
+                                                                    <span className="block text-xs text-muted-foreground truncate">{u.email}</span>
+                                                                </span>
+                                                            </button>
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            );
+                                        })()}
                                     </div>
                                     <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
                                         {editParticipants.map((email, idx) => (
-                                            <div key={idx} className="flex items-center justify-between p-2 bg-slate-50 rounded-lg border border-slate-100 group">
-                                                <span className="text-sm text-slate-600 truncate mr-2">{email} {idx === 0 && <span className="text-[10px] bg-blue-100 text-blue-600 px-1.5 py-0.5 rounded font-bold ml-1">ORGA</span>}</span>
+                                            <div key={idx} className="flex items-center justify-between p-2.5 bg-muted/50 rounded-xl border border-border group">
+                                                <span className="text-sm text-foreground truncate mr-2">{email} {idx === 0 && <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-bold ml-1">ORGA</span>}</span>
                                                 {idx !== 0 && (
-                                                    <button onClick={() => removeParticipant(email)} className="text-slate-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all">
+                                                    <button onClick={() => removeParticipant(email)} className="text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-all" aria-label={t('meetings.detail.editRemoveParticipantAria', { email })}>
                                                         <X className="w-4 h-4" />
                                                     </button>
                                                 )}
@@ -568,20 +630,20 @@ export const MeetingDetail: React.FC = () => {
                                 </div>
                             </div>
 
-                            <div className="p-6 bg-slate-50 border-t border-slate-100 flex gap-3">
+                            <div className="p-6 bg-muted/50 border-t border-border flex gap-3">
                                 <button
                                     onClick={() => setShowEditModal(false)}
-                                    className="flex-1 py-3 px-4 bg-white border border-slate-200 rounded-xl font-bold text-slate-700 hover:bg-slate-100 transition-colors"
+                                    className="flex-1 py-3 px-4 bg-card border border-border rounded-xl font-bold text-foreground hover:bg-accent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                                 >
-                                    Annuler
+                                    {t('common.cancel')}
                                 </button>
                                 <button
                                     onClick={handleSaveEdit}
                                     disabled={isSaving || !editTitle}
-                                    className="flex-1 py-3 px-4 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-all disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg shadow-blue-600/20"
+                                    className="flex-1 py-3 px-4 bg-primary text-primary-foreground rounded-xl font-bold hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                                 >
                                     {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckSquare className="w-4 h-4" />}
-                                    Enregistrer
+                                    {t('meetings.detail.editSave')}
                                 </button>
                             </div>
                         </div>
@@ -597,101 +659,33 @@ export const MeetingDetail: React.FC = () => {
             {/* Report Modal Overlay */}
             {showReportModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-                    <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in duration-300">
-                        <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-blue-50/50">
+                    <div className="bg-card rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in duration-300">
+                        <div className="p-6 border-b border-border flex justify-between items-center bg-muted/50">
                             <div>
-                                <h2 className="text-2xl font-bold text-slate-800">Meeting Report</h2>
-                                <p className="text-sm text-slate-500">Summary & Attendance</p>
+                                <h2 className="text-2xl font-bold text-foreground">{t('meetings.detail.reportTitle')}</h2>
+                                <p className="text-sm text-muted-foreground">{t('meetings.detail.reportSubtitle')}</p>
                             </div>
                             <button
                                 onClick={() => setShowReportModal(false)}
-                                className="p-2 hover:bg-slate-200 rounded-full transition-colors"
+                                className="p-2 hover:bg-accent rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                aria-label={t('meetings.detail.closeReportAria')}
                             >
-                                <Users className="w-5 h-5 text-slate-500" /> Close
+                                <X className="w-5 h-5 text-muted-foreground" />
                             </button>
                         </div>
 
                         <div className="p-8 space-y-8">
-                            {/* Attendance Highlight */}
+                            {/* Summary Preview */}
                             <div>
-                                <h3 className="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
-                                    <Users className="w-5 h-5 text-blue-600" /> Attendance Overview
+                                <h3 className="text-lg font-semibold text-foreground mb-3 flex items-center gap-2">
+                                    <FileText className="w-5 h-5 text-primary" /> {t('meetings.detail.reportSummarySection')}
                                 </h3>
-                                <div className="bg-slate-50 rounded-xl border border-slate-200 divide-y divide-slate-200">
-                                    {(() => {
-                                        try {
-                                            const attendance = meeting.attendance ? JSON.parse(meeting.attendance) : {};
-                                            const entries = Object.entries(attendance);
-                                            if (entries.length === 0) return <div className="p-4 text-slate-500">No data available.</div>;
-
-                                            // Calculate Stats
-                                            const total = entries.length;
-                                            const present = entries.filter(([, d]: any) => d.status === 'PRESENT').length;
-                                            const absent = total - present;
-
-                                            return (
-                                                <>
-                                                    <div className="p-4 grid grid-cols-3 gap-4 text-center">
-                                                        <div>
-                                                            <div className="text-2xl font-bold text-slate-900">{total}</div>
-                                                            <div className="text-xs text-slate-500 font-medium uppercase">Invited</div>
-                                                        </div>
-                                                        <div>
-                                                            <div className="text-2xl font-bold text-green-600">{present}</div>
-                                                            <div className="text-xs text-slate-500 font-medium uppercase">Present</div>
-                                                        </div>
-                                                        <div>
-                                                            <div className="text-2xl font-bold text-red-600">{absent}</div>
-                                                            <div className="text-xs text-slate-500 font-medium uppercase">Absent</div>
-                                                        </div>
-                                                    </div>
-
-                                                    <div className="max-h-60 overflow-y-auto">
-                                                        {entries.map(([email, data]: any) => {
-                                                            const seconds = data.duration;
-                                                            let durationText = `${seconds}s`;
-                                                            if (seconds >= 60) {
-                                                                const m = Math.floor(seconds / 60);
-                                                                const s = seconds % 60;
-                                                                durationText = s > 0 ? `${m}m ${s}s` : `${m}m`;
-                                                            }
-                                                            return (
-                                                                <div key={email} className="p-3 flex items-center justify-between hover:bg-white transition-colors">
-                                                                    <div className="flex items-center gap-3">
-                                                                        <div className={`w-2 h-2 rounded-full ${data.status === 'PRESENT' ? 'bg-green-500' : 'bg-red-500'}`} />
-                                                                        <span className="font-medium text-slate-700">{email}</span>
-                                                                    </div>
-                                                                    <div className="flex items-center gap-4">
-                                                                        <span className="text-xs text-slate-400 font-mono">{durationText}</span>
-                                                                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${data.status === 'PRESENT' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                                                                            }`}>
-                                                                            {data.status}
-                                                                        </span>
-                                                                    </div>
-                                                                </div>
-                                                            );
-                                                        })}
-                                                    </div>
-                                                </>
-                                            );
-                                        } catch (e) {
-                                            return <div className="p-4 text-red-500">Error parsing data.</div>;
-                                        }
-                                    })()}
-                                </div>
-                            </div>
-
-                            {/* Key Takeaways Preview */}
-                            <div>
-                                <h3 className="text-lg font-semibold text-slate-800 mb-3 flex items-center gap-2">
-                                    <FileText className="w-5 h-5 text-purple-600" /> Summary Preview
-                                </h3>
-                                <div className="bg-purple-50 p-6 rounded-xl border border-purple-100 text-slate-700 prose-sm max-h-48 overflow-y-auto">
+                                <div className="bg-primary/5 p-6 rounded-xl border border-primary/10 text-foreground prose-sm max-h-48 overflow-y-auto">
                                     {meeting.summary ? (
                                         <ReactMarkdown>{meeting.summary.content}</ReactMarkdown>
                                     ) : (
-                                        <div className="flex items-center gap-2 text-purple-600">
-                                            <Loader2 className="w-4 h-4 animate-spin" /> Generating AI Summary...
+                                        <div className="flex items-center gap-2 text-primary">
+                                            <Loader2 className="w-4 h-4 animate-spin" /> {t('meetings.detail.reportAiGenerating')}
                                         </div>
                                     )}
                                 </div>
@@ -699,9 +693,9 @@ export const MeetingDetail: React.FC = () => {
 
                             <button
                                 onClick={() => setShowReportModal(false)}
-                                className="w-full py-4 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-semibold transition-all shadow-lg hover:shadow-xl"
+                                className="w-full py-4 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                             >
-                                View Full Details & Recording
+                                {t('meetings.detail.reportViewDetails')}
                             </button>
                         </div>
                     </div>
@@ -709,26 +703,26 @@ export const MeetingDetail: React.FC = () => {
             )}
 
             <div className="mb-6">
-                <Link to="/meetings" className="text-sm text-slate-500 hover:text-blue-600 flex items-center gap-1 mb-3">
-                    <ArrowLeft className="w-4 h-4" /> Back to Meetings
+                <Link to="/meetings" className="text-sm text-muted-foreground hover:text-primary flex items-center gap-1 mb-3 transition-colors">
+                    <ArrowLeft className="w-4 h-4" /> {t('meetings.detail.backToMeetings')}
                 </Link>
-                <h1 className="text-3xl font-bold text-slate-900">{meeting.title}</h1>
+                <h1 className="text-3xl font-bold text-foreground">{meeting.title}</h1>
                 <div className="flex items-center justify-between mt-2">
-                    <div className="flex items-center gap-4 text-sm text-slate-500">
+                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
                         <div className="flex items-center gap-1">
                             <Calendar className="w-4 h-4" /> {new Date(meeting.createdAt).toLocaleDateString()}
                         </div>
                     </div>
                     <button
                         onClick={async () => {
-                            if (confirm('Are you sure you want to delete this meeting?')) {
+                            if (confirm(t('meetings.detail.deleteConfirm'))) {
                                 await meetingService.deleteMeeting(meeting.id);
                                 window.location.href = '/meetings';
                             }
                         }}
-                        className="flex items-center gap-2 text-red-600 hover:bg-red-50 px-3 py-1.5 rounded-lg transition-colors text-sm font-medium"
+                        className="flex items-center gap-2 text-destructive hover:bg-destructive/10 px-3 py-1.5 rounded-lg transition-colors text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     >
-                        <Trash2 className="w-4 h-4" /> Delete Meeting
+                        <Trash2 className="w-4 h-4" /> {t('meetings.detail.delete')}
                     </button>
                 </div>
             </div>
@@ -737,55 +731,61 @@ export const MeetingDetail: React.FC = () => {
                 {/* Main Content Area */}
                 <div className="lg:col-span-2 space-y-6">
 
-                    {/* Media Player (Video or Audio) */}
+                    {/* Media Player */}
                     {meeting.audioUrl && (
-                        <div className="bg-black rounded-xl overflow-hidden shadow-lg border border-slate-800">
+                        <div className="bg-black rounded-2xl overflow-hidden shadow-lg border border-border">
                             <video
                                 controls
                                 className="w-full max-h-[500px] mx-auto"
                                 playsInline
                             >
                                 <source src={`http://localhost:3000/meetings/${meeting.id}/file`} />
-                                Your browser does not support the video tag.
+                                {t('meetings.detail.videoNotSupported')}
                             </video>
                         </div>
                     )}
 
                     {/* Tabs */}
-                    <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden min-h-[500px]">
-                        <div className="flex border-b border-slate-200">
+                    <div className="bg-card rounded-2xl shadow-sm border border-border/80 overflow-hidden min-h-[500px]">
+                        <div className="flex border-b border-border" role="tablist" aria-label={t('meetings.detail.sectionsAria')}>
                             <button
+                                role="tab"
+                                aria-selected={activeTab === 'summary'}
                                 onClick={() => setActiveTab('summary')}
-                                className={`px-6 py-4 text-sm font-medium flex items-center gap-2 border-b-2 transition-colors ${activeTab === 'summary' ? 'border-blue-600 text-blue-600 bg-blue-50/50' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+                                className={`px-6 py-4 text-sm font-medium flex items-center gap-2 border-b-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset ${activeTab === 'summary' ? 'border-primary text-primary bg-primary/5' : 'border-transparent text-muted-foreground hover:text-foreground'}`}
                             >
-                                <FileText className="w-4 h-4" /> Smart Summary
+                                <FileText className="w-4 h-4" /> {t('meetings.detail.tabs.summary')}
                             </button>
                             <button
+                                role="tab"
+                                aria-selected={activeTab === 'transcript'}
                                 onClick={() => setActiveTab('transcript')}
-                                className={`px-6 py-4 text-sm font-medium flex items-center gap-2 border-b-2 transition-colors ${activeTab === 'transcript' ? 'border-blue-600 text-blue-600 bg-blue-50/50' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+                                className={`px-6 py-4 text-sm font-medium flex items-center gap-2 border-b-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset ${activeTab === 'transcript' ? 'border-primary text-primary bg-primary/5' : 'border-transparent text-muted-foreground hover:text-foreground'}`}
                             >
-                                <ListVideo className="w-4 h-4" /> Full Transcript
+                                <ListVideo className="w-4 h-4" /> {t('meetings.detail.tabs.transcript')}
                             </button>
                             <button
+                                role="tab"
+                                aria-selected={activeTab === 'documents'}
                                 onClick={() => { setActiveTab('documents'); loadAllDocuments(); }}
-                                className={`px-6 py-4 text-sm font-medium flex items-center gap-2 border-b-2 transition-colors ${activeTab === 'documents' ? 'border-blue-600 text-blue-600 bg-blue-50/50' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+                                className={`px-6 py-4 text-sm font-medium flex items-center gap-2 border-b-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset ${activeTab === 'documents' ? 'border-primary text-primary bg-primary/5' : 'border-transparent text-muted-foreground hover:text-foreground'}`}
                             >
-                                <Paperclip className="w-4 h-4" /> Documents ({meetingDocuments.length})
+                                <Paperclip className="w-4 h-4" /> {t('meetings.detail.tabs.documents', { count: meetingDocuments.length })}
                             </button>
                         </div>
 
-                        <div className="p-6">
+                        <div className="p-6" role="tabpanel">
                             {activeTab === 'summary' && (
-                                <div className="prose prose-sm max-w-none text-slate-700">
+                                <div className="prose prose-sm max-w-none text-foreground">
                                     {meeting.summary ? (
                                         <ReactMarkdown>{meeting.summary.content}</ReactMarkdown>
                                     ) : (meeting.status === 'PROCESSING' || meeting.status === 'UPLOADED') ? (
-                                        <EmptyState message="L'IA génère le résumé..." />
+                                        <EmptyState message={t('meetings.detail.summaryGenerating')} />
                                     ) : (
-                                        <div className="flex flex-col items-center justify-center py-12 text-slate-400">
+                                        <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
                                             <FileText className="w-12 h-12 mb-3 opacity-20" />
-                                            <p>Aucun résumé disponible.</p>
-                                            <p className="text-sm mt-2">L'enregistrement audio est manquant ou trop court.</p>
+                                            <p>{t('meetings.detail.summaryEmpty')}</p>
+                                            <p className="text-sm mt-2">{t('meetings.detail.summaryEmptyHint')}</p>
                                         </div>
                                     )}
                                 </div>
@@ -794,15 +794,15 @@ export const MeetingDetail: React.FC = () => {
                             {activeTab === 'transcript' && (
                                 <div className="space-y-4">
                                     {meeting.transcript ? (
-                                        <div className="text-slate-700 leading-relaxed whitespace-pre-wrap">
+                                        <div className="text-foreground leading-relaxed whitespace-pre-wrap">
                                             {meeting.transcript.content}
                                         </div>
                                     ) : (meeting.status === 'PROCESSING' || meeting.status === 'UPLOADED') ? (
-                                        <EmptyState message="Transcription en cours..." />
+                                        <EmptyState message={t('meetings.detail.transcriptProcessing')} />
                                     ) : (
-                                        <div className="flex flex-col items-center justify-center py-12 text-slate-400">
+                                        <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
                                             <ListVideo className="w-12 h-12 mb-3 opacity-20" />
-                                            <p>Aucune transcription disponible.</p>
+                                            <p>{t('meetings.detail.transcriptEmpty')}</p>
                                         </div>
                                     )}
                                 </div>
@@ -811,66 +811,60 @@ export const MeetingDetail: React.FC = () => {
                             {activeTab === 'documents' && (
                                 <div className="space-y-4">
                                     <div className="flex justify-between items-center flex-wrap gap-2">
-                                        <h3 className="font-semibold text-slate-800">Documents associés</h3>
+                                        <h3 className="font-semibold text-foreground">{t('meetings.detail.documentsAssociated')}</h3>
                                         <div className="flex gap-2">
                                             <button
                                                 onClick={() => setShowUploadForm(!showUploadForm)}
-                                                className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium"
+                                                className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 transition-colors text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                                             >
-                                                <Upload className="w-4 h-4" /> Uploader
+                                                <Upload className="w-4 h-4" /> {t('meetings.detail.upload')}
                                             </button>
                                             <button
                                                 onClick={() => { loadAllDocuments(); setShowAddDocModal(true); }}
-                                                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+                                                className="flex items-center gap-2 px-4 py-2 bg-card border border-border text-foreground rounded-xl hover:bg-accent transition-colors text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                                             >
-                                                <Plus className="w-4 h-4" /> Ajouter existant
+                                                <Plus className="w-4 h-4" /> {t('meetings.detail.addExisting')}
                                             </button>
                                         </div>
                                     </div>
 
                                     {/* Upload Form */}
                                     {showUploadForm && (
-                                        <div className="p-4 border border-green-200 rounded-lg bg-green-50 space-y-3">
-                                            <h4 className="font-medium text-green-800 flex items-center gap-2">
-                                                <Upload className="w-4 h-4" /> Uploader un nouveau document
+                                        <div className="p-4 border border-primary/20 rounded-xl bg-primary/5 space-y-3">
+                                            <h4 className="font-medium text-foreground flex items-center gap-2">
+                                                <Upload className="w-4 h-4 text-primary" /> {t('meetings.detail.uploadNewDoc')}
                                             </h4>
                                             <div>
-                                                <label className="block text-xs font-medium text-slate-600 mb-1">
-                                                    Fichier
-                                                </label>
+                                                <label className="block text-xs font-medium text-foreground mb-1">{t('meetings.detail.fileLabel')}</label>
                                                 <input
                                                     ref={fileInputRef}
                                                     type="file"
                                                     onChange={handleFileChange}
-                                                    className="w-full text-sm text-slate-500 file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                                                    className="w-full text-sm text-muted-foreground file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-primary/10 file:text-primary hover:file:bg-primary/20 file:transition-colors"
                                                 />
                                             </div>
                                             <div className="grid grid-cols-2 gap-3">
                                                 <div>
-                                                    <label className="block text-xs font-medium text-slate-600 mb-1">
-                                                        Nom du document
-                                                    </label>
+                                                    <label className="block text-xs font-medium text-foreground mb-1">{t('meetings.detail.documentNameLabel')}</label>
                                                     <input
                                                         type="text"
                                                         value={uploadName}
                                                         onChange={(e) => setUploadName(e.target.value)}
-                                                        placeholder="Nom du document"
-                                                        className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                                                        placeholder={t('meetings.detail.documentNamePlaceholder')}
+                                                        className="w-full px-3 py-2 text-sm bg-background border border-input rounded-xl text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                                                     />
                                                 </div>
                                                 <div>
-                                                    <label className="block text-xs font-medium text-slate-600 mb-1">
-                                                        Type
-                                                    </label>
+                                                    <label className="block text-xs font-medium text-foreground mb-1">{t('meetings.detail.documentTypeLabel')}</label>
                                                     <select
                                                         value={uploadType}
                                                         onChange={(e) => setUploadType(e.target.value as DocumentType)}
-                                                        className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                                                        className="w-full px-3 py-2 text-sm bg-background border border-input rounded-xl text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                                                     >
-                                                        <option value={DocumentType.CR_REUNION}>Compte Rendu Réunion</option>
-                                                        <option value={DocumentType.RAPPORT}>Rapport</option>
-                                                        <option value={DocumentType.ADMINISTRATIF}>Administratif</option>
-                                                        <option value={DocumentType.PROJET}>Projet</option>
+                                                        <option value={DocumentType.CR_REUNION}>{t('documents.types.minutes')}</option>
+                                                        <option value={DocumentType.RAPPORT}>{t('documents.types.report')}</option>
+                                                        <option value={DocumentType.ADMINISTRATIF}>{t('documents.types.admin')}</option>
+                                                        <option value={DocumentType.PROJET}>{t('documents.types.project')}</option>
                                                     </select>
                                                 </div>
                                             </div>
@@ -882,24 +876,24 @@ export const MeetingDetail: React.FC = () => {
                                                         setUploadName('');
                                                         if (fileInputRef.current) fileInputRef.current.value = '';
                                                     }}
-                                                    className="flex-1 px-4 py-2 text-sm text-slate-600 border border-slate-300 rounded-lg hover:bg-slate-100"
+                                                    className="flex-1 px-4 py-2 text-sm text-foreground border border-border rounded-xl hover:bg-accent transition-colors"
                                                 >
-                                                    Annuler
+                                                    {t('common.cancel')}
                                                 </button>
                                                 <button
                                                     onClick={handleUploadNewDocument}
                                                     disabled={uploadingDoc || !uploadFile}
-                                                    className="flex-1 px-4 py-2 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 flex items-center justify-center gap-2"
+                                                    className="flex-1 px-4 py-2 text-sm bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 disabled:opacity-50 flex items-center justify-center gap-2 transition-colors"
                                                 >
                                                     {uploadingDoc ? (
                                                         <>
                                                             <Loader2 className="w-4 h-4 animate-spin" />
-                                                            Upload...
+                                                            {t('meetings.detail.uploading')}
                                                         </>
                                                     ) : (
                                                         <>
                                                             <Upload className="w-4 h-4" />
-                                                            Uploader et associer
+                                                            {t('meetings.detail.uploadAndAssociate')}
                                                         </>
                                                     )}
                                                 </button>
@@ -909,39 +903,39 @@ export const MeetingDetail: React.FC = () => {
 
                                     {loadingDocs ? (
                                         <div className="flex justify-center py-8">
-                                            <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
+                                            <Loader2 className="w-6 h-6 animate-spin text-primary" />
                                         </div>
                                     ) : meetingDocuments.length === 0 ? (
-                                        <div className="flex flex-col items-center justify-center py-12 text-slate-400">
+                                        <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
                                             <Paperclip className="w-12 h-12 mb-3 opacity-20" />
-                                            <p>Aucun document associé à cette réunion.</p>
-                                            <p className="text-sm mt-2">Cliquez sur "Ajouter un document" pour en associer.</p>
+                                            <p>{t('meetings.detail.noDocumentsAssociated')}</p>
+                                            <p className="text-sm mt-2">{t('meetings.detail.noDocumentsHint')}</p>
                                         </div>
                                     ) : (
                                         <div className="space-y-2">
                                             {meetingDocuments.map((doc) => (
-                                                <div key={doc._id} className="flex items-center justify-between p-4 bg-slate-50 rounded-lg border border-slate-200 hover:bg-slate-100 transition-colors">
+                                                <div key={doc._id} className="flex items-center justify-between p-4 bg-muted/50 rounded-xl border border-border hover:bg-accent/50 transition-colors">
                                                     <div className="flex items-center gap-3">
-                                                        <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
-                                                            <FileText className="w-5 h-5 text-blue-600" />
+                                                        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                                                            <FileText className="w-5 h-5 text-primary" />
                                                         </div>
                                                         <div>
-                                                            <div className="font-medium text-slate-800">{doc.name}</div>
-                                                            <div className="text-xs text-slate-500">{(doc.size / 1024).toFixed(1)} KB • v{doc.version}</div>
+                                                            <div className="font-medium text-foreground">{doc.name}</div>
+                                                            <div className="text-xs text-muted-foreground">{(doc.size / 1024).toFixed(1)} KB • v{doc.version}</div>
                                                         </div>
                                                     </div>
                                                     <div className="flex items-center gap-2">
                                                         <button
                                                             onClick={() => handleDownloadDocument(doc)}
-                                                            className="p-2 hover:bg-blue-100 rounded-lg transition-colors text-blue-600"
-                                                            title="Télécharger"
+                                                            className="p-2 hover:bg-primary/10 rounded-lg transition-colors text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                                            title={t('meetings.detail.documentDownload')}
                                                         >
                                                             <Download className="w-4 h-4" />
                                                         </button>
                                                         <button
                                                             onClick={() => handleRemoveDocument(doc._id)}
-                                                            className="p-2 hover:bg-red-100 rounded-lg transition-colors text-red-600"
-                                                            title="Retirer"
+                                                            className="p-2 hover:bg-destructive/10 rounded-lg transition-colors text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                                            title={t('meetings.detail.documentRemove')}
                                                         >
                                                             <X className="w-4 h-4" />
                                                         </button>
@@ -958,27 +952,27 @@ export const MeetingDetail: React.FC = () => {
 
                 {/* Sidebar: Actions */}
                 <div className="space-y-6">
-                    <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                        <div className="bg-slate-50 px-4 py-3 border-b border-slate-200 flex justify-between items-center">
-                            <h3 className="font-semibold text-slate-800 flex items-center gap-2">
-                                <CheckSquare className="w-4 h-4 text-blue-600" /> Action Items
+                    <div className="bg-card rounded-2xl shadow-sm border border-border/80 overflow-hidden">
+                        <div className="bg-muted/50 px-4 py-3 border-b border-border flex justify-between items-center">
+                            <h3 className="font-semibold text-foreground flex items-center gap-2">
+                                <CheckSquare className="w-4 h-4 text-primary" /> Actions à faire
                             </h3>
-                            <span className="text-xs font-medium bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
+                            <span className="text-xs font-medium bg-primary/10 text-primary px-2 py-0.5 rounded-full">
                                 {meeting.actions?.length || 0}
                             </span>
                         </div>
-                        <div className="divide-y divide-slate-100">
+                        <div className="divide-y divide-border">
                             {meeting.actions && meeting.actions.length > 0 ? (
                                 meeting.actions.map((action, idx) => (
-                                    <div key={idx} className="p-4 hover:bg-slate-50 transition-colors">
-                                        <p className="text-sm text-slate-800 font-medium mb-1">{action.description}</p>
+                                    <div key={idx} className="p-4 hover:bg-accent/50 transition-colors">
+                                        <p className="text-sm text-foreground font-medium mb-1">{action.description}</p>
                                         <div className="flex items-center justify-between mt-2">
-                                            <span className="text-xs text-slate-500">
-                                                {action.assignee || 'Unassigned'}
+                                            <span className="text-xs text-muted-foreground">
+                                                {action.assignee || t('meetings.detail.actionsUnassigned')}
                                             </span>
-                                            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded uppercase ${action.priority === 'HIGH' ? 'bg-red-100 text-red-700' :
-                                                action.priority === 'MEDIUM' ? 'bg-orange-100 text-orange-700' :
-                                                    'bg-blue-100 text-blue-700'
+                                            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full uppercase ${action.priority === 'HIGH' ? 'bg-destructive/10 text-destructive' :
+                                                action.priority === 'MEDIUM' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300' :
+                                                    'bg-primary/10 text-primary'
                                                 }`}>
                                                 {action.priority}
                                             </span>
@@ -986,101 +980,36 @@ export const MeetingDetail: React.FC = () => {
                                     </div>
                                 ))
                             ) : (
-                                <div className="p-8 text-center text-slate-500 text-sm">
-                                    No actions detected yet.
+                                <div className="p-8 text-center text-muted-foreground text-sm">
+                                    {t('meetings.detail.actionsEmpty')}
                                 </div>
                             )}
                         </div>
                     </div>
                 </div>
 
-                {/* Attendance Report */}
-                <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                    <div className="bg-slate-50 px-4 py-3 border-b border-slate-200">
-                        <h3 className="font-semibold text-slate-800 flex items-center gap-2">
-                            <Users className="w-4 h-4 text-blue-600" /> Attendance Report
-                        </h3>
-                    </div>
-                    <div className="divide-y divide-slate-100">
-                        {meeting.attendance ? (
-                            (() => {
-                                try {
-                                    const attendance = JSON.parse(meeting.attendance);
-                                    const entries = Object.entries(attendance);
-                                    if (entries.length === 0) {
-                                        return <div className="p-4 text-sm text-slate-500">No attendance data.</div>;
-                                    }
-                                    return entries.map(([email, data]: any) => {
-                                        // Improved duration logic
-                                        const seconds = data.duration;
-                                        let durationText = `${seconds}s`;
-                                        if (seconds >= 60) {
-                                            const m = Math.floor(seconds / 60);
-                                            const s = seconds % 60;
-                                            durationText = s > 0 ? `${m}m ${s}s` : `${m}m`;
-                                        }
-
-                                        const status = data.status;
-                                        const showStatus = status !== 'N/A' && status !== 'INFO';
-
-                                        return (
-                                            <div key={email} className="p-4 flex items-center justify-between">
-                                                <div>
-                                                    <div className="text-sm font-medium text-slate-800">{email}</div>
-                                                    <div className="text-xs text-slate-500">Duration: {durationText}</div>
-                                                </div>
-                                                {showStatus && (
-                                                    <span className={`text-[10px] font-bold px-2 py-1 rounded-full uppercase ${status === 'PRESENT' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                                                        }`}>
-                                                        {status}
-                                                    </span>
-                                                )}
-                                            </div>
-                                        );
-                                    });
-                                } catch (e) {
-                                    return <div className="p-4 text-sm text-red-500">Error loading attendance.</div>;
-                                }
-                            })()
-                        ) : (
-                            <div className="p-8 text-center text-slate-500 text-sm flex flex-col items-center">
-                                {(meeting.status === 'PROCESSING' || meeting.status === 'UPLOADED') ? (
-                                    <>
-                                        <Loader2 className="w-5 h-5 animate-spin mb-2 opacity-50" />
-                                        <span className="opacity-70">Génération du rapport...</span>
-                                    </>
-                                ) : (
-                                    <>
-                                        <Users className="w-6 h-6 mb-2 opacity-20" />
-                                        <p>Aucune donnée de présence.</p>
-                                    </>
-                                )}
-                            </div>
-                        )}
-                    </div>
-                </div>
             </div>
 
             {/* Add Document Modal */}
             {showAddDocModal && (
                 <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-                    <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden">
-                        <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-                            <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-                                <Paperclip className="w-5 h-5 text-blue-600" />
-                                Associer un document
+                    <div className="bg-card rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden">
+                        <div className="p-6 border-b border-border flex justify-between items-center bg-muted/50">
+                            <h3 className="text-xl font-bold text-foreground flex items-center gap-2">
+                                <Paperclip className="w-5 h-5 text-primary" />
+                                {t('meetings.detail.addDocumentModalTitle')}
                             </h3>
-                            <button onClick={() => setShowAddDocModal(false)} className="p-2 hover:bg-slate-200 rounded-lg">
-                                <X className="w-5 h-5 text-slate-500" />
+                            <button onClick={() => setShowAddDocModal(false)} className="p-2 hover:bg-accent rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                                <X className="w-5 h-5 text-muted-foreground" />
                             </button>
                         </div>
 
                         <div className="p-6 max-h-[60vh] overflow-y-auto">
                             {allDocuments.length === 0 ? (
-                                <div className="text-center py-8 text-slate-500">
+                                <div className="text-center py-8 text-muted-foreground">
                                     <Paperclip className="w-12 h-12 mx-auto mb-3 opacity-20" />
-                                    <p>Aucun document disponible.</p>
-                                    <p className="text-sm mt-2">Ajoutez des documents dans la section Documents.</p>
+                                    <p>{t('meetings.detail.noDocumentsAvailable')}</p>
+                                    <p className="text-sm mt-2">{t('meetings.detail.addDocumentsInDocumentsSection')}</p>
                                 </div>
                             ) : (
                                 <div className="space-y-2">
@@ -1090,23 +1019,23 @@ export const MeetingDetail: React.FC = () => {
                                             <button
                                                 key={doc._id}
                                                 onClick={() => handleAddDocument(doc._id)}
-                                                className="w-full flex items-center gap-3 p-4 bg-slate-50 rounded-lg border border-slate-200 hover:bg-blue-50 hover:border-blue-300 transition-colors text-left"
+                                                className="w-full flex items-center gap-3 p-4 bg-muted/50 rounded-xl border border-border hover:bg-accent hover:border-primary/30 transition-colors text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                                             >
-                                                <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0">
-                                                    <FileText className="w-5 h-5 text-blue-600" />
+                                                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                                                    <FileText className="w-5 h-5 text-primary" />
                                                 </div>
                                                 <div className="flex-1 min-w-0">
-                                                    <div className="font-medium text-slate-800 truncate">{doc.name}</div>
-                                                    <div className="text-xs text-slate-500">
+                                                    <div className="font-medium text-foreground truncate">{doc.name}</div>
+                                                    <div className="text-xs text-muted-foreground">
                                                         {(doc.size / 1024).toFixed(1)} KB • {doc.type}
                                                     </div>
                                                 </div>
-                                                <Plus className="w-5 h-5 text-blue-600 flex-shrink-0" />
+                                                <Plus className="w-5 h-5 text-primary flex-shrink-0" />
                                             </button>
                                         ))}
                                     {allDocuments.filter(doc => !meetingDocuments.some(md => md._id === doc._id)).length === 0 && (
-                                        <div className="text-center py-4 text-slate-500">
-                                            Tous les documents sont déjà associés.
+                                        <div className="text-center py-4 text-muted-foreground">
+                                            {t('meetings.detail.allDocumentsAssociated')}
                                         </div>
                                     )}
                                 </div>
@@ -1120,7 +1049,7 @@ export const MeetingDetail: React.FC = () => {
 };
 
 const EmptyState = ({ message }: { message: string }) => (
-    <div className="flex flex-col items-center justify-center py-12 text-slate-400">
+    <div className="flex flex-col items-center justify-center py-12 text-muted-foreground" role="status" aria-live="polite">
         <Loader2 className="w-8 h-8 animate-spin mb-3 opacity-50" />
         <p>{message}</p>
     </div>
